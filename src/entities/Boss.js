@@ -3,7 +3,7 @@
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createToonMaterial } from '../shaders/ToonShader.js';
+import { createMaterial } from '../shaders/MaterialFactory.js';
 import { Explosion } from './Explosion.js';
 import { randomRange, distanceXZ } from '../utils/helpers.js';
 
@@ -24,7 +24,7 @@ export class Boss {
 
     // 主体底座
     const baseGeo = new THREE.BoxGeometry(8, 3, 6);
-    const baseMat = createToonMaterial(0x2c3e50);
+    const baseMat = createMaterial('metal', 0x2c3e50);
     const base = new THREE.Mesh(baseGeo, baseMat);
     base.castShadow = true;
     base.receiveShadow = true;
@@ -33,7 +33,7 @@ export class Boss {
 
     // 核心塔
     const towerGeo = new THREE.CylinderGeometry(1.5, 2, 5, 8);
-    const towerMat = createToonMaterial(0xe74c3c);
+    const towerMat = createMaterial('paint', 0xe74c3c);
     this.tower = new THREE.Mesh(towerGeo, towerMat);
     this.tower.castShadow = true;
     this.tower.position.y = 5.5;
@@ -41,7 +41,7 @@ export class Boss {
 
     // 侧翼炮台 × 2
     const turretGeo = new THREE.CylinderGeometry(0.8, 1, 2.5, 6);
-    const turretMat = createToonMaterial(0x636e72);
+    const turretMat = createMaterial('metal', 0x636e72);
     const leftTurret = new THREE.Mesh(turretGeo, turretMat);
     leftTurret.castShadow = true;
     leftTurret.position.set(-3.5, 4, 0);
@@ -210,7 +210,7 @@ export class Boss {
     origin.y += 8;
 
     const missileGeo = new THREE.ConeGeometry(0.2, 1, 6);
-    const missileMat = createToonMaterial(0xff6600);
+    const missileMat = createMaterial('paint', 0xff6600);
     const missile = new THREE.Mesh(missileGeo, missileMat);
     missile.position.copy(origin);
     game.sceneManager.scene.add(missile);

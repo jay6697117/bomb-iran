@@ -71,6 +71,25 @@ export class Game {
     this.audioManager.registerSynth('achievement', {
       frequency: 600, frequencyEnd: 1200, duration: 0.4, type: 'sine', volume: 0.5
     });
+    // 硬核模式新增音效
+    this.audioManager.registerSynth('missile_launch', {
+      frequency: 300, frequencyEnd: 600, duration: 0.3, type: 'sawtooth', volume: 0.4
+    });
+    this.audioManager.registerSynth('napalm_drop', {
+      frequency: 200, frequencyEnd: 80, duration: 0.6, type: 'sawtooth', volume: 0.35
+    });
+    this.audioManager.registerSynth('empty_clip', {
+      frequency: 400, duration: 0.06, type: 'square', volume: 0.25
+    });
+    this.audioManager.registerSynth('fuel_low', {
+      frequency: 300, frequencyEnd: 100, duration: 0.4, type: 'sine', volume: 0.5
+    });
+    this.audioManager.registerSynth('supply_drop', {
+      frequency: 400, frequencyEnd: 700, duration: 0.3, type: 'sine', volume: 0.35
+    });
+    this.audioManager.registerSynth('radar_ping', {
+      frequency: 1000, duration: 0.1, type: 'sine', volume: 0.2
+    });
   }
 
   // 切换游戏状态

@@ -12,11 +12,15 @@ export class AntiAir {
 
     this.hp = 5;
     this.isDestroyed = false;
-    this.fireRate = fireRate; // 每隔几秒射击
+    this.baseFireRate = fireRate; // 基础射击间隔
+    this.fireRate = fireRate;
     this.range = range;
     this.fireTimer = 0;
     this.isTarget = true;
     this.type = 'antiair';
+
+    // 雷达联动 — 警戒等级
+    this.alertLevel = 'low'; // 'low' 或 'high'
 
     // 模型 - 底座 + 炮管
     this.mesh = new THREE.Group();
@@ -49,21 +53,34 @@ export class AntiAir {
     this.mesh.userData.entity = this;
   }
 
+  // 设置警戒等级（被雷达站调用）
+  setAlertLevel(level) {
+    this.alertLevel = level;
+    if (level === 'high') {
+      // 高警戒：射速提升
+      this.fireRate = this.baseFireRate / 1.5;
+    } else {
+      // 低警戒：恢复基础射速
+      this.fireRate = this.baseFireRate;
+    }
+  }
+
   update(game, deltaTime) {
     if (this.isDestroyed || !game.player || !game.player.isAlive) return;
 
     const playerPos = game.player.mesh.position;
     const dist = distanceXZ(this.mesh.position, playerPos);
 
-    // 炮管始终朝向玩家
+    // 炮管朝向玩家
     const dx = playerPos.x - this.mesh.position.x;
     const dz = playerPos.z - this.mesh.position.z;
     const angle = Math.atan2(dx, dz);
     this.mesh.rotation.y = angle;
 
-    // 指示灯闪烁
+    // 指示灯 — 高警戒时更快闪烁
+    const blinkSpeed = this.alertLevel === 'high' ? 200 : 500;
     this.indicator.material.color.setHex(
-      Math.floor(performance.now() / 500) % 2 === 0 ? 0xff0000 : 0x990000
+      Math.floor(performance.now() / blinkSpeed) % 2 === 0 ? 0xff0000 : 0x990000
     );
 
     // 射击逻辑
@@ -85,16 +102,26 @@ export class AntiAir {
     bullet.position.y += 1;
     game.sceneManager.scene.add(bullet);
 
-    // 计算方向
+    // 高警戒时精准射击，低警戒时散射
     const direction = new THREE.Vector3()
       .subVectors(targetPos, bullet.position)
       .normalize();
+
+    if (this.alertLevel === 'low') {
+      // 低警戒散射偏移
+      direction.x += (Math.random() - 0.5) * 0.3;
+      direction.z += (Math.random() - 0.5) * 0.3;
+      direction.normalize();
+    }
 
     const speed = 15;
     let lifetime = 0;
 
     // 简单的更新函数
     const bulletEntity = {
+      type: 'enemy_bullet',
+      damage: 1,
+      mesh: bullet,
       update(game, dt) {
         lifetime += dt;
         bullet.position.addScaledVector(direction, speed * dt);
@@ -126,11 +153,11 @@ export class AntiAir {
     if (this.isDestroyed) return;
     this.hp -= amount;
     if (this.hp <= 0) {
-      this.destroy(game);
+      this.die(game);
     }
   }
 
-  destroy(game) {
+  die(game) {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
 
@@ -141,12 +168,17 @@ export class AntiAir {
     });
 
     game.sceneManager.scene.remove(this.mesh);
-    game.audioManager.playExplosion();
+    game.audioManager.play('explosion');
 
     if (game.player) {
       game.player.stats.targetsDestroyed++;
     }
 
     game.removeEntity(this);
+  }
+
+  destroy(game) {
+    if (this.isDestroyed) return;
+    this.die(game);
   }
 }

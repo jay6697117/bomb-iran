@@ -2,7 +2,7 @@
 // 跟踪导弹实体 - 锁定玩家追踪
 // ============================
 import * as THREE from 'three';
-import { createToonMaterial } from '../shaders/ToonShader.js';
+import { createMaterial } from '../shaders/MaterialFactory.js';
 import { COLORS } from '../utils/constants.js';
 
 export class Missile {
@@ -19,7 +19,7 @@ export class Missile {
     this.mesh = new THREE.Group();
 
     const bodyGeo = new THREE.ConeGeometry(0.1, 0.6, 6);
-    const bodyMat = createToonMaterial(COLORS.missile);
+    const bodyMat = createMaterial('metal', COLORS.missile);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.rotation.x = Math.PI / 2;
     this.mesh.add(body);

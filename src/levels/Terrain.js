@@ -2,7 +2,7 @@
 // 地形生成器 - 不同关卡风格的地面
 // ============================
 import * as THREE from 'three';
-import { createToonMaterial } from '../shaders/ToonShader.js';
+import { createMaterial } from '../shaders/MaterialFactory.js';
 import { COLORS } from '../utils/constants.js';
 import { randomRange } from '../utils/helpers.js';
 
@@ -45,12 +45,12 @@ export class Terrain {
 
     const config = TERRAIN_THEMES[theme] || TERRAIN_THEMES.desert;
 
-    // 设置天空颜色
-    game.sceneManager.setSkyColor(config.skyColor);
+    // 设置大气氛围（天空+雾效+光照色调）
+    game.sceneManager.setAtmosphere(theme);
 
     // 地面
     const groundGeo = new THREE.PlaneGeometry(size, size, 20, 20);
-    const groundMat = createToonMaterial(config.groundColor);
+    const groundMat = createMaterial('earth', config.groundColor);
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
@@ -132,7 +132,7 @@ export class Terrain {
   createCactus() {
     const group = new THREE.Group();
     const trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.5, 6);
-    const trunkMat = createToonMaterial(0x2ecc71);
+    const trunkMat = createMaterial('foliage', 0x2ecc71);
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
     trunk.position.y = 0.75;
     trunk.castShadow = true;
@@ -151,7 +151,7 @@ export class Terrain {
   createRock() {
     const size = randomRange(0.3, 0.8);
     const geo = new THREE.DodecahedronGeometry(size, 0);
-    const mat = createToonMaterial(0x7f8c8d);
+    const mat = createMaterial('stone', 0x7f8c8d);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.y = size * 0.5;
     mesh.rotation.set(randomRange(0, 1), randomRange(0, 1), 0);
@@ -161,7 +161,7 @@ export class Terrain {
 
   createDune() {
     const geo = new THREE.SphereGeometry(randomRange(1.5, 3), 8, 4, 0, Math.PI * 2, 0, Math.PI / 2);
-    const mat = createToonMaterial(0xD4A76A);
+    const mat = createMaterial('earth', 0xD4A76A);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.scale.y = 0.4;
     return mesh;
@@ -171,13 +171,13 @@ export class Terrain {
     const group = new THREE.Group();
     // 树干
     const trunkGeo = new THREE.CylinderGeometry(0.1, 0.15, 1, 6);
-    const trunkMat = createToonMaterial(0x8d6e63);
+    const trunkMat = createMaterial('wood', 0x8d6e63);
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
     trunk.position.y = 0.5;
     group.add(trunk);
     // 树冠
     const crownGeo = new THREE.SphereGeometry(0.6, 6, 4);
-    const crownMat = createToonMaterial(color);
+    const crownMat = createMaterial('foliage', color);
     const crown = new THREE.Mesh(crownGeo, crownMat);
     crown.position.y = 1.3;
     crown.castShadow = true;
@@ -188,14 +188,14 @@ export class Terrain {
   createPine() {
     const group = new THREE.Group();
     const trunkGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.8, 6);
-    const trunkMat = createToonMaterial(0x5d4037);
+    const trunkMat = createMaterial('wood', 0x5d4037);
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
     trunk.position.y = 0.4;
     group.add(trunk);
     // 层叠锥体
     for (let i = 0; i < 3; i++) {
       const coneGeo = new THREE.ConeGeometry(0.5 - i * 0.12, 0.7, 6);
-      const coneMat = createToonMaterial(0x1b5e20);
+      const coneMat = createMaterial('foliage', 0x1b5e20);
       const cone = new THREE.Mesh(coneGeo, coneMat);
       cone.position.y = 0.8 + i * 0.5;
       cone.castShadow = true;
@@ -206,7 +206,7 @@ export class Terrain {
 
   createRoad(index, size) {
     const geo = new THREE.PlaneGeometry(3, size);
-    const mat = createToonMaterial(0x555555);
+    const mat = createMaterial('asphalt', 0x555555);
     const road = new THREE.Mesh(geo, mat);
     road.rotation.x = -Math.PI / 2;
     road.position.set(index === 0 ? 0 : -15, 0.02, 0);

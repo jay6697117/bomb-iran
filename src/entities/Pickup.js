@@ -9,7 +9,10 @@ const PICKUP_CONFIG = {
   shield: { color: COLORS.pickupShield, emoji: '🛡️', geometry: 'diamond' },
   speed: { color: COLORS.pickupSpeed, emoji: '⚡', geometry: 'star' },
   mega_bomb: { color: COLORS.pickupMega, emoji: '💣', geometry: 'sphere' },
-  health: { color: COLORS.pickupHealth, emoji: '❤️', geometry: 'cross' }
+  health: { color: COLORS.pickupHealth, emoji: '❤️', geometry: 'cross' },
+  fuel: { color: COLORS.pickupFuel, emoji: '⛽', geometry: 'cylinder' },
+  ammo: { color: COLORS.pickupAmmo, emoji: '📦', geometry: 'box' },
+  weapon_crate: { color: COLORS.pickupWeaponCrate, emoji: '🔧', geometry: 'star' }
 };
 
 export class Pickup {
@@ -38,6 +41,12 @@ export class Pickup {
         break;
       case 'cross':
         geo = new THREE.BoxGeometry(0.2, 0.6, 0.2);
+        break;
+      case 'cylinder':
+        geo = new THREE.CylinderGeometry(0.25, 0.25, 0.5, 8);
+        break;
+      case 'box':
+        geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
         break;
       default:
         geo = new THREE.SphereGeometry(0.35, 8, 6);

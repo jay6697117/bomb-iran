@@ -3,7 +3,7 @@
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createToonMaterial } from '../shaders/ToonShader.js';
+import { createMaterial } from '../shaders/MaterialFactory.js';
 import { PHYSICS, PLAYER_DEFAULTS, COLORS } from '../utils/constants.js';
 
 export class Bomb {
@@ -23,7 +23,7 @@ export class Bomb {
 
     // 网格
     const geo = new THREE.SphereGeometry(radius, 8, 6);
-    const mat = createToonMaterial(COLORS.bomb);
+    const mat = createMaterial('metal', COLORS.bomb);
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.castShadow = true;
     game.sceneManager.scene.add(this.mesh);

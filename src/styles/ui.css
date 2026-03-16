@@ -247,29 +247,147 @@ body {
   color: #feca57;
 }
 
-.hud-bottom-left {
+/* 武器栏容器 */
+.hud-weapons {
   position: absolute;
   bottom: 20px;
   left: 16px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   pointer-events: auto;
 }
 
 .weapon-slot {
-  padding: 8px 16px;
-  background: rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.6);
   border: 2px solid rgba(255,255,255,0.1);
   border-radius: 10px;
-  font-size: 16px;
+  font-size: 14px;
   color: #999;
   transition: all 0.2s;
+  min-width: 52px;
+  backdrop-filter: blur(4px);
 }
 .weapon-slot.active {
   border-color: #feca57;
   color: #fff;
   background: rgba(254,202,87,0.2);
   box-shadow: 0 0 12px rgba(254,202,87,0.3);
+}
+.weapon-slot.empty {
+  opacity: 0.4;
+}
+.weapon-key {
+  font-size: 10px;
+  color: #666;
+  font-weight: 700;
+}
+.weapon-slot.active .weapon-key {
+  color: #feca57;
+}
+.weapon-icon {
+  font-size: 18px;
+}
+.weapon-ammo {
+  font-size: 11px;
+  font-weight: 700;
+  color: #74b9ff;
+}
+.weapon-slot.empty .weapon-ammo {
+  color: #e74c3c;
+}
+
+/* 燃料条 */
+.hud-fuel-container {
+  position: absolute;
+  top: 55px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  border-radius: 8px;
+}
+.hud-fuel-label {
+  font-size: 12px;
+  color: #aaa;
+  white-space: nowrap;
+}
+.hud-fuel-bar {
+  width: 120px;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.hud-fuel-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2ecc71, #27ae60);
+  border-radius: 4px;
+  transition: width 0.3s, background 0.5s;
+}
+.hud-fuel-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2ecc71;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* 警报区域 */
+.hud-warnings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.warning-critical {
+  font-size: 18px;
+  font-weight: 900;
+  color: #e74c3c;
+  text-shadow: 0 0 10px rgba(231,76,60,0.8);
+  animation: warningBlink 0.3s ease-in-out infinite alternate;
+}
+.warning-low {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f39c12;
+  animation: warningBlink 0.8s ease-in-out infinite alternate;
+}
+.warning-radar {
+  font-size: 16px;
+  font-weight: 700;
+  color: #a29bfe;
+  text-shadow: 0 0 8px rgba(162,155,254,0.6);
+  animation: warningBlink 0.5s ease-in-out infinite alternate;
+}
+.warning-missile {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ff4757;
+  text-shadow: 0 0 15px rgba(255,71,87,0.8);
+  animation: warningBlink 0.2s ease-in-out infinite alternate;
+}
+.warning-ammo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #74b9ff;
+  animation: warningBlink 0.6s ease-in-out infinite alternate;
+}
+@keyframes warningBlink {
+  from { opacity: 1; }
+  to { opacity: 0.3; }
 }
 
 .hud-bottom-right {

@@ -1,5 +1,5 @@
 // ============================
-// 关卡管理器 - 加载/切换/完成关卡
+// 关卡管理器 — 硬核版（战斗机波次、补给空投、防空网）
 // ============================
 import { LEVEL_DATA } from './LevelData.js';
 import { Terrain } from './Terrain.js';
@@ -8,6 +8,11 @@ import { AntiAir } from '../entities/AntiAir.js';
 import { Pickup } from '../entities/Pickup.js';
 import { Missile } from '../entities/Missile.js';
 import { Boss } from '../entities/Boss.js';
+import { EnemyFighter } from '../entities/EnemyFighter.js';
+import { RadarStation } from '../entities/RadarStation.js';
+import { SAMSite } from '../entities/SAMSite.js';
+import { SupplyDrop } from '../entities/SupplyDrop.js';
+import { WEAPON_CONFIG, FUEL_CONFIG } from '../utils/constants.js';
 
 export class LevelManager {
   constructor() {
@@ -19,7 +24,12 @@ export class LevelManager {
     this.isComplete = false;
     this.missileTimer = 0;
     this.missileInterval = 8;
-    this.boss = null; // BOSS 实体引用
+    this.boss = null;
+
+    // 硬核系统
+    this.fighterWaveTimer = 0;
+    this.fighterWaveIndex = 0;
+    this.supplyDropTimer = 0;
   }
 
   // 加载关卡
@@ -34,6 +44,9 @@ export class LevelManager {
     this.currentLevelData = data;
     this.isComplete = false;
     this.missileTimer = 0;
+    this.fighterWaveTimer = 0;
+    this.fighterWaveIndex = 0;
+    this.supplyDropTimer = 0;
     this.startTime = performance.now();
 
     // 清除旧内容
@@ -58,6 +71,24 @@ export class LevelManager {
       if (game.combatSystem) game.combatSystem.registerAntiAir(aa);
     }
 
+    // 放置 SAM 阵地
+    if (data.samSites) {
+      for (const config of data.samSites) {
+        const sam = new SAMSite(game, config);
+        game.addEntity(sam);
+        if (game.combatSystem) game.combatSystem.registerSAMSite(sam);
+      }
+    }
+
+    // 放置雷达站
+    if (data.radars) {
+      for (const config of data.radars) {
+        const radar = new RadarStation(game, config);
+        game.addEntity(radar);
+        if (game.combatSystem) game.combatSystem.registerRadar(radar);
+      }
+    }
+
     // 放置道具
     for (const config of data.pickups) {
       const pickup = new Pickup(game, config);
@@ -65,7 +96,7 @@ export class LevelManager {
       if (game.combatSystem) game.combatSystem.registerPickup(pickup);
     }
 
-    // 生成 BOSS（如果关卡配置中有）
+    // 生成 BOSS
     this.boss = null;
     if (data.boss) {
       this.boss = new Boss(game, data.boss);
@@ -75,6 +106,19 @@ export class LevelManager {
     // 重置玩家
     if (game.player) {
       game.player.reset(game);
+
+      // 关卡初始弹药和燃料
+      if (data.playerStartAmmo) {
+        for (const [weapon, amount] of Object.entries(data.playerStartAmmo)) {
+          if (game.player.ammo[weapon] !== undefined) {
+            game.player.ammo[weapon] = amount;
+          }
+        }
+      }
+      if (data.playerStartFuel !== undefined) {
+        game.player.fuel = data.playerStartFuel;
+      }
+
       game.sceneManager.scene.add(game.player.mesh);
     }
 
@@ -97,10 +141,15 @@ export class LevelManager {
       }
     }
 
+    // 战斗机波次生成
+    this.updateFighterWaves(game, deltaTime);
+
+    // 补给空投
+    this.updateSupplyDrops(game, deltaTime);
+
     // 检查关卡完成条件
     if (game.combatSystem) {
       const remaining = game.combatSystem.getRemainingTargets();
-      // 如果有 BOSS，需要同时击败 BOSS
       const bossAlive = this.boss && this.boss.isAlive;
       if (remaining === 0 && !bossAlive) {
         this.completeLevel(game);
@@ -113,11 +162,74 @@ export class LevelManager {
     }
   }
 
+  // === 战斗机波次 ===
+  updateFighterWaves(game, deltaTime) {
+    const data = this.currentLevelData;
+    if (!data.fighterWaves || this.fighterWaveIndex >= data.fighterWaves.length) return;
+    if (!game.player || !game.player.isAlive) return;
+
+    this.fighterWaveTimer += deltaTime;
+    const wave = data.fighterWaves[this.fighterWaveIndex];
+
+    if (this.fighterWaveTimer >= wave.spawnTime) {
+      // 生成这一波战斗机
+      for (let i = 0; i < wave.count; i++) {
+        const side = Math.random();
+        let x, z;
+        if (side < 0.5) {
+          x = Math.random() > 0.5 ? -45 : 45;
+          z = -10 - Math.random() * 30;
+        } else {
+          x = Math.random() * 80 - 40;
+          z = Math.random() > 0.5 ? 5 : -50;
+        }
+
+        const fighter = new EnemyFighter(game, { x, z, y: 10 });
+        game.addEntity(fighter);
+        if (game.combatSystem) game.combatSystem.registerFighter(fighter);
+      }
+
+      console.log(`✈️ 战斗机波次 ${this.fighterWaveIndex + 1}: ${wave.count} 架`);
+      this.fighterWaveIndex++;
+    }
+  }
+
+  // === 补给空投 ===
+  updateSupplyDrops(game, deltaTime) {
+    const data = this.currentLevelData;
+    const interval = data.supplyDropInterval || 30;
+    if (!game.player || !game.player.isAlive) return;
+
+    this.supplyDropTimer += deltaTime;
+    if (this.supplyDropTimer >= interval) {
+      this.supplyDropTimer = 0;
+
+      // 在玩家附近随机位置空投
+      const px = game.player.mesh.position.x;
+      const pz = game.player.mesh.position.z;
+      const offsetX = (Math.random() - 0.5) * 20;
+      const offsetZ = (Math.random() - 0.5) * 20;
+
+      // 随机补给类型
+      const types = ['ammo_crate', 'fuel_tank', 'weapon_kit'];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      const supply = new SupplyDrop(game, {
+        x: px + offsetX,
+        z: pz + offsetZ,
+        type
+      });
+      game.addEntity(supply);
+      game.audioManager.play('supply_drop');
+
+      console.log(`📦 空投补给: ${type}`);
+    }
+  }
+
   // 发射跟踪导弹
   launchMissile(game) {
     if (!game.player || !game.player.isAlive) return;
 
-    // 从随机边缘发射
     const side = Math.random();
     let x, z;
     if (side < 0.25) { x = -40; z = Math.random() * -40; }
@@ -141,10 +253,8 @@ export class LevelManager {
     const result = this.calculateResult(game);
     console.log(`🎉 关卡完成！评级: ${result.grade} | 分数: ${result.score}`);
 
-    // 保存进度
     this.saveProgress(result);
 
-    // 通知 UI
     if (game.uiManager) {
       game.uiManager.showResult(result);
     }
@@ -171,20 +281,26 @@ export class LevelManager {
   calculateResult(game) {
     const stats = game.player ? game.player.stats : {};
     const data = this.currentLevelData;
-    const totalTargets = (data.buildings?.length || 0) + (data.antiAirs?.length || 0);
+    const totalTargets = (data.buildings?.length || 0)
+      + (data.antiAirs?.length || 0)
+      + (data.samSites?.length || 0)
+      + (data.radars?.length || 0);
     const destroyed = stats.targetsDestroyed || 0;
     const destroyRate = totalTargets > 0 ? destroyed / totalTargets : 0;
     const survived = game.player ? game.player.isAlive : false;
     const hpRatio = game.player ? game.player.hp / game.player.maxHP : 0;
+    const fuelRatio = game.player ? game.player.fuel / game.player.maxFuel : 0;
     const timeUsed = this.elapsedTime;
     const parTime = data.par || 120;
 
     // 评分计算
     let score = 0;
-    score += Math.round(destroyRate * 50);     // 摧毁率 50 分
-    score += survived ? 20 : 0;                // 存活 20 分
-    score += Math.round(hpRatio * 15);         // 血量比 15 分
-    score += timeUsed < parTime ? 15 : Math.max(0, 15 - Math.floor((timeUsed - parTime) / 10)); // 时间 15 分
+    score += Math.round(destroyRate * 40);     // 摧毁率 40 分
+    score += survived ? 15 : 0;                // 存活 15 分
+    score += Math.round(hpRatio * 10);         // 血量比 10 分
+    score += Math.round(fuelRatio * 10);       // 燃料比 10 分（硬核加分）
+    score += timeUsed < parTime ? 15 : Math.max(0, 15 - Math.floor((timeUsed - parTime) / 10));
+    score += Math.min(10, (stats.fightersShot || 0) * 3); // 击落战斗机加分
 
     // 评级
     let grade = 'C';
@@ -202,11 +318,12 @@ export class LevelManager {
       destroyRate: Math.round(destroyRate * 100),
       timeUsed: Math.round(timeUsed),
       survived, hpRatio: Math.round(hpRatio * 100),
+      fuelRemaining: Math.round(fuelRatio * 100),
       stats
     };
   }
 
-  // 保存进度到 LocalStorage
+  // 保存进度
   saveProgress(result) {
     try {
       const save = JSON.parse(localStorage.getItem('bomb_iran_save') || '{}');
@@ -214,7 +331,6 @@ export class LevelManager {
       if (!save.coins) save.coins = 0;
       if (!save.totalPlays) save.totalPlays = 0;
 
-      // 更新最佳记录
       const prev = save.levels[result.levelId];
       if (!prev || result.score > prev.score) {
         save.levels[result.levelId] = {
@@ -243,18 +359,18 @@ export class LevelManager {
     }
   }
 
-  // 获取下一关 ID
+  // 获取下一关
   getNextLevelId() {
     const ids = Object.keys(LEVEL_DATA);
     const idx = ids.indexOf(this.currentLevelId);
     return idx >= 0 && idx < ids.length - 1 ? ids[idx + 1] : null;
   }
 
-  // 是否解锁某关卡（前一关通过即解锁）
+  // 是否解锁
   static isLevelUnlocked(levelId) {
     const ids = Object.keys(LEVEL_DATA);
     const idx = ids.indexOf(levelId);
-    if (idx === 0) return true; // 第一关总是解锁
+    if (idx === 0) return true;
 
     const prevId = ids[idx - 1];
     const save = LevelManager.loadSave();

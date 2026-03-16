@@ -3,7 +3,7 @@
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { createToonMaterial } from '../shaders/ToonShader.js';
+import { createMaterial } from '../shaders/MaterialFactory.js';
 import { PHYSICS, COLORS } from '../utils/constants.js';
 import { randomRange } from '../utils/helpers.js';
 
@@ -29,7 +29,7 @@ export class Building {
 
     // 主体网格
     const geo = new THREE.BoxGeometry(width, height, depth);
-    const mat = createToonMaterial(color);
+    const mat = createMaterial('stone', color);
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.position.set(x, height / 2, z);
     this.mesh.castShadow = true;
@@ -116,7 +116,7 @@ export class Building {
     for (let i = 0; i < debrisCount; i++) {
       const size = randomRange(0.2, 0.6);
       const debrisGeo = new THREE.BoxGeometry(size, size, size);
-      const debrisMat = createToonMaterial(
+      const debrisMat = createMaterial('stone',
         Math.random() > 0.5 ? 0x95a5a6 : 0x636e72
       );
       const debrisMesh = new THREE.Mesh(debrisGeo, debrisMat);
