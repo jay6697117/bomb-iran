@@ -258,7 +258,9 @@ export class PostProcessing {
 
     // 3. Bloom 发光（爆炸/道具/闪光）
     const resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
-    this.bloomPass = new UnrealBloomPass(resolution, 0.15, 0.3, 0.95);
+    // Bloom 参数：(分辨率, 强度, 半径, 阈值)
+    // 提高阈值到 0.98 以只让极亮物体产生光辉，降低强度避免飞机周围白色光晕
+    this.bloomPass = new UnrealBloomPass(resolution, 0.08, 0.2, 0.98);
     this.composer.addPass(this.bloomPass);
 
     // 4. 屏幕震动

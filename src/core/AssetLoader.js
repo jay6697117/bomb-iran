@@ -20,12 +20,19 @@ export class AssetLoader {
    * 先尝试加载 .glb 文件，失败则用程序化模型
    */
   async preloadAll() {
-    const modelNames = ['player', 'enemy_fighter', 'boss'];
+    // 模型名称到文件名的映射（player 使用 Jet.glb）
+    const modelMap = {
+      player: 'Jet',
+      enemy_fighter: 'enemy_fighter',
+      boss: 'boss'
+    };
+    const modelNames = Object.keys(modelMap);
 
     const tasks = modelNames.map(async (name) => {
       try {
+        const fileName = modelMap[name];
         // 尝试加载 .glb 文件
-        const gltf = await this.loadGLTF(`/models/${name}.glb`);
+        const gltf = await this.loadGLTF(`/models/${fileName}.glb`);
         const model = gltf.scene;
         // 开启阴影
         model.traverse((child) => {
@@ -34,8 +41,15 @@ export class AssetLoader {
             child.receiveShadow = true;
           }
         });
+
+        // 针对 Jet.glb 调整缩放和旋转
+        if (name === 'player') {
+          model.scale.set(0.5, 0.5, 0.5);
+          model.rotation.y = Math.PI; // 机头朝屏幕上方（-Z），机尾朝向玩家
+        }
+
         this.models.set(name, model);
-        console.log(`✅ 模型加载成功: ${name}.glb`);
+        console.log(`✅ 模型加载成功: ${fileName}.glb`);
       } catch {
         // 加载失败，使用程序化模型
         const model = this.buildProceduralModel(name);

@@ -29,7 +29,7 @@ export class SceneManager {
     this.renderer.shadowMap.type = THREE.VSMShadowMap; // 高质量软阴影
     this.renderer.setClearColor(0x000000); // 天空系统接管背景色
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.8;
+    this.renderer.toneMappingExposure = 0.6; // 降低曝光以压制天空 HDR 过曝
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     // 场景

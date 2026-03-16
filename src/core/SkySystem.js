@@ -151,12 +151,12 @@ export class SkySystem {
 
     // 用环境贴图作为背景（PMREM 已压缩 HDR 峰值）
     this.scene.background = this.envMap;
-    this.scene.backgroundIntensity = 0.35; // 控制天空背景亮度（低值避免边缘过亮）
-    this.scene.backgroundBlurriness = 0.05; // 模糊柔化太阳光盘和地平线
+    this.scene.backgroundIntensity = 0.18; // 大幅降低背景亮度，防止天空过曝
+    this.scene.backgroundBlurriness = 0.12; // 增加模糊以柔化太阳光盘残余高亮
 
     // 设置场景环境（间接照明用）
     this.scene.environment = this.envMap;
-    this.scene.environmentIntensity = 0.25;
+    this.scene.environmentIntensity = 0.12; // 降低环境间接照明强度
 
     // 通知材质工厂更新所有材质
     setGlobalEnvMap(this.envMap);
