@@ -42,13 +42,16 @@ export class AssetLoader {
           }
         });
 
-        // 针对 Jet.glb 调整缩放和旋转
+        // 针对 Jet.glb：用 wrapper 隔离基础旋转，避免被 Player.update() 覆盖
         if (name === 'player') {
+          const wrapper = new THREE.Group();
           model.scale.set(0.5, 0.5, 0.5);
           model.rotation.y = Math.PI; // 机头朝屏幕上方（-Z），机尾朝向玩家
+          wrapper.add(model);
+          this.models.set(name, wrapper);
+        } else {
+          this.models.set(name, model);
         }
-
-        this.models.set(name, model);
         console.log(`✅ 模型加载成功: ${fileName}.glb`);
       } catch {
         // 加载失败，使用程序化模型
