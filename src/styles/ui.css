@@ -1,0 +1,681 @@
+/* ============================
+   Bomb Iran - 游戏 UI 样式
+   ============================ */
+
+/* 重置和基础 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  background: #000;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #fff;
+  user-select: none;
+}
+
+/* 游戏画布 */
+#game-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* UI 容器 - 覆盖在画布上方 */
+#ui-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#ui-container > * {
+  pointer-events: auto;
+}
+
+/* ============================
+   通用 UI 组件
+   ============================ */
+
+/* 游戏按钮 */
+.game-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(180deg, #ff6b35 0%, #e74c3c 100%);
+  border: 3px solid #c0392b;
+  border-radius: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 0 #a93226, 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.game-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #a93226, 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.game-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #a93226, 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.game-btn.secondary {
+  background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+  border-color: #1f6fa5;
+  box-shadow: 0 4px 0 #1a5276, 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.game-btn.secondary:hover {
+  box-shadow: 0 6px 0 #1a5276, 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.game-btn.secondary:active {
+  box-shadow: 0 2px 0 #1a5276, 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 面板/卡片 */
+.game-panel {
+  background: rgba(20, 20, 40, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================
+   主菜单
+   ============================ */
+.main-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+}
+
+.main-menu .game-title {
+  font-size: 64px;
+  font-weight: 900;
+  color: #feca57;
+  text-shadow: 3px 3px 0 #e74c3c, 6px 6px 0 rgba(0, 0, 0, 0.3);
+  margin-bottom: 8px;
+  letter-spacing: 4px;
+}
+
+.main-menu .game-subtitle {
+  font-size: 20px;
+  color: #95a5a6;
+  margin-bottom: 48px;
+}
+
+.main-menu .menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 280px;
+}
+
+.main-menu .menu-buttons .game-btn {
+  width: 100%;
+  text-align: center;
+}
+
+/* ============================
+   HUD（游戏中抬头显示）
+   ============================ */
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hud-top-left {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 4px;
+}
+
+.hud-heart {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s;
+}
+
+.hud-heart.lost {
+  opacity: 0.3;
+  transform: scale(0.8);
+}
+
+.hud-top-center {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #feca57;
+  text-align: center;
+  border: 1px solid rgba(254, 202, 87, 0.3);
+}
+
+.hud-top-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 20px;
+  color: #feca57;
+  font-weight: bold;
+  border: 1px solid rgba(254, 202, 87, 0.3);
+}
+
+.hud-bottom-left {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.weapon-slot {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #aaa;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.weapon-slot.active {
+  color: #fff;
+  border-color: #feca57;
+  background: rgba(254, 202, 87, 0.15);
+}
+
+.hud-bottom-right {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================
+   暂停菜单
+   ============================ */
+.pause-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.pause-menu {
+  text-align: center;
+}
+
+.pause-menu h2 {
+  font-size: 36px;
+  color: #feca57;
+  margin-bottom: 32px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.pause-menu .menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 240px;
+  margin: 0 auto;
+}
+
+.pause-menu .game-btn {
+  width: 100%;
+}
+
+/* ============================
+   关卡选择
+   ============================ */
+.level-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.level-select h2 {
+  font-size: 32px;
+  color: #feca57;
+  margin-bottom: 32px;
+}
+
+.chapter {
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 24px;
+}
+
+.chapter-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid #feca57;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.level-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.level-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.level-card.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.level-card .level-num {
+  font-size: 24px;
+  font-weight: bold;
+  color: #feca57;
+}
+
+.level-card .level-rating {
+  font-size: 14px;
+  color: #2ecc71;
+  margin-top: 4px;
+}
+
+/* ============================
+   关卡结算
+   ============================ */
+.result-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.result-panel {
+  text-align: center;
+  width: 400px;
+}
+
+.result-panel .result-grade {
+  font-size: 80px;
+  font-weight: 900;
+  margin-bottom: 24px;
+}
+
+.result-grade.grade-S { color: #feca57; text-shadow: 0 0 20px rgba(254, 202, 87, 0.5); }
+.result-grade.grade-A { color: #2ecc71; }
+.result-grade.grade-B { color: #3498db; }
+.result-grade.grade-C { color: #95a5a6; }
+
+.result-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 16px;
+}
+
+.result-stats .stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.result-coins {
+  font-size: 24px;
+  color: #feca57;
+  margin-bottom: 24px;
+}
+
+.result-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ============================
+   升级商店
+   ============================ */
+.shop-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 40px;
+}
+
+.shop-screen h2 {
+  font-size: 32px;
+  color: #feca57;
+  margin-bottom: 8px;
+}
+
+.shop-coins {
+  font-size: 20px;
+  color: #feca57;
+  margin-bottom: 32px;
+}
+
+.shop-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.shop-item .item-icon {
+  font-size: 32px;
+}
+
+.shop-item .item-info {
+  flex: 1;
+}
+
+.shop-item .item-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.shop-item .item-level {
+  font-size: 12px;
+  color: #95a5a6;
+  margin-top: 2px;
+}
+
+.shop-item .item-level-bar {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.shop-item .item-level-bar span {
+  width: 16px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.shop-item .item-level-bar span.filled {
+  background: #2ecc71;
+}
+
+/* ============================
+   成就页面
+   ============================ */
+.achievements-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.achievements-screen h2 {
+  font-size: 32px;
+  color: #feca57;
+  margin-bottom: 24px;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.achievement-item.unlocked {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.achievement-item .ach-icon {
+  font-size: 28px;
+}
+
+.achievement-item.locked .ach-icon {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.achievement-item .ach-info {
+  flex: 1;
+}
+
+.achievement-item .ach-name {
+  font-weight: bold;
+}
+
+.achievement-item .ach-desc {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.achievement-item .ach-reward {
+  color: #feca57;
+  font-size: 14px;
+}
+
+/* ============================
+   过场动画 / 任务简报
+   ============================ */
+.cutscene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.cutscene-panel {
+  text-align: center;
+  max-width: 500px;
+}
+
+.cutscene-panel .mission-title {
+  font-size: 14px;
+  color: #e74c3c;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.cutscene-panel .mission-name {
+  font-size: 32px;
+  font-weight: bold;
+  color: #feca57;
+  margin-bottom: 24px;
+}
+
+.cutscene-panel .mission-desc {
+  font-size: 16px;
+  color: #bbb;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.cutscene-panel .mission-objectives {
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.cutscene-panel .mission-objectives h4 {
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.cutscene-panel .mission-objectives li {
+  color: #ccc;
+  margin-bottom: 4px;
+  list-style: none;
+  padding-left: 20px;
+  position: relative;
+}
+
+.cutscene-panel .mission-objectives li::before {
+  content: '🎯';
+  position: absolute;
+  left: 0;
+}
+
+/* ============================
+   成就解锁通知
+   ============================ */
+.achievement-toast {
+  position: fixed;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 40, 0.95);
+  border: 2px solid #feca57;
+  border-radius: 12px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+  transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 24px rgba(254, 202, 87, 0.3);
+}
+
+.achievement-toast.show {
+  top: 20px;
+}
+
+.achievement-toast .toast-icon {
+  font-size: 32px;
+}
+
+.achievement-toast .toast-text {
+  font-size: 14px;
+}
+
+.achievement-toast .toast-text strong {
+  display: block;
+  color: #feca57;
+  font-size: 16px;
+}
+
+/* ============================
+   通用过渡动画
+   ============================ */
+.screen-hidden {
+  display: none !important;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 分数飘字动画 */
+.score-float {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  color: #feca57;
+  pointer-events: none;
+  animation: scoreFloat 1s ease-out forwards;
+  z-index: 20;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes scoreFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+}
