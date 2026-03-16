@@ -147,6 +147,11 @@ export class Game {
         this.combatSystem.update(this, deltaTime);
       }
 
+      // 更新关卡管理器
+      if (this.levelManager) {
+        this.levelManager.update(this, deltaTime);
+      }
+
       // 移除标记的实体
       this.processRemovals();
 

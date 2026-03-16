@@ -11,6 +11,10 @@ export class PhysicsWorld {
     this.world.broadphase = new CANNON.NaiveBroadphase();
     this.world.solver.iterations = 10;
 
+    // 延迟移除队列 - 避免在碰撞回调中直接移除物理体导致崩溃
+    this.pendingRemovals = [];
+    this.isStepping = false;
+
     // 碰撞材质
     this.defaultMaterial = new CANNON.Material('default');
     this.groundMaterial = new CANNON.Material('ground');
@@ -47,9 +51,23 @@ export class PhysicsWorld {
     return body;
   }
 
-  // 移除物理体
+  // 移除物理体（如果正在步进中，则延迟移除）
   removeBody(body) {
-    this.world.removeBody(body);
+    if (this.isStepping) {
+      // 在物理步进中，先加入待移除队列
+      if (!this.pendingRemovals.includes(body)) {
+        this.pendingRemovals.push(body);
+      }
+      return;
+    }
+    this._doRemoveBody(body);
+  }
+
+  // 实际执行移除
+  _doRemoveBody(body) {
+    try {
+      this.world.removeBody(body);
+    } catch(e) { /* 忽略已移除的 body */ }
     this.bodyMeshPairs = this.bodyMeshPairs.filter(p => p.body !== body);
     this.collisionCallbacks.delete(body.id);
   }
@@ -82,12 +100,22 @@ export class PhysicsWorld {
 
   // 每帧更新物理并同步到 Mesh
   update(deltaTime) {
+    this.isStepping = true;
     this.world.step(1 / 60, deltaTime, 3);
+    this.isStepping = false;
+
+    // 处理延迟移除队列
+    while (this.pendingRemovals.length > 0) {
+      const body = this.pendingRemovals.pop();
+      this._doRemoveBody(body);
+    }
 
     // 同步物理体位置到 Three.js Mesh
     for (const { body, mesh } of this.bodyMeshPairs) {
-      mesh.position.copy(body.position);
-      mesh.quaternion.copy(body.quaternion);
+      if (body && mesh) {
+        mesh.position.copy(body.position);
+        mesh.quaternion.copy(body.quaternion);
+      }
     }
   }
 

@@ -1,161 +1,179 @@
 // ============================
-// 游戏入口 - 初始化并启动
+// 游戏入口 - 完整游戏流程
 // ============================
 import { Game } from './core/Game.js';
 import { Player } from './entities/Player.js';
-import { Building } from './entities/Building.js';
-import { AntiAir } from './entities/AntiAir.js';
-import { Pickup } from './entities/Pickup.js';
 import { CombatSystem } from './systems/CombatSystem.js';
-import { createToonMaterial } from './shaders/ToonShader.js';
-import * as THREE from 'three';
+import { LevelManager } from './levels/LevelManager.js';
+import { LEVEL_DATA } from './levels/LevelData.js';
 
-// 获取 canvas
+// UI 系统
+import { UIManager } from './ui/UIManager.js';
+import { MainMenu } from './ui/screens/MainMenu.js';
+import { LevelSelect } from './ui/screens/LevelSelect.js';
+import { PauseMenu } from './ui/screens/PauseMenu.js';
+import { ResultScreen } from './ui/screens/ResultScreen.js';
+import { Cutscene } from './ui/screens/Cutscene.js';
+import { Shop } from './ui/screens/Shop.js';
+import { Achievements } from './ui/screens/Achievements.js';
+import { HUD } from './ui/components/HUD.js';
+
+// =============================
+// 初始化
+// =============================
 const canvas = document.getElementById('game-canvas');
-
-// 创建游戏实例
 const game = new Game(canvas);
-
-// =============================
-// 构建测试战斗场景
-// =============================
-
-// 地面
-const groundGeo = new THREE.PlaneGeometry(100, 100);
-const groundMat = createToonMaterial(0xDEB887);
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-game.sceneManager.scene.add(ground);
-game.physicsWorld.createGroundBody();
-
-// 格子辅助线
-const gridHelper = new THREE.GridHelper(100, 50, 0x888866, 0x666644);
-gridHelper.position.y = 0.01;
-game.sceneManager.scene.add(gridHelper);
 
 // 战斗系统
 const combatSystem = new CombatSystem();
 game.combatSystem = combatSystem;
 
-// 创建玩家
-const player = new Player(game);
-game.player = player;
+// 关卡管理器
+const levelManager = new LevelManager();
+game.levelManager = levelManager;
 
-// 创建建筑群
-const buildingConfigs = [
-  { x: 5, z: -8, width: 2, height: 3, depth: 2, color: 0xe9c46a },
-  { x: -3, z: -12, width: 2.5, height: 4, depth: 2.5, color: 0xf4a261 },
-  { x: 8, z: -15, width: 2, height: 2.5, depth: 2, color: 0x2a9d8f },
-  { x: -7, z: -6, width: 3, height: 5, depth: 2, color: 0x264653 },
-  { x: 0, z: -20, width: 2, height: 3.5, depth: 2, color: 0x636e72 },
-  { x: 12, z: -10, width: 2, height: 2, depth: 2, color: 0xe76f51 },
-  { x: -10, z: -18, width: 2.5, height: 4.5, depth: 2.5, color: 0xe9c46a },
-  { x: 6, z: -25, width: 2, height: 3, depth: 2, color: 0xf4a261 },
-];
-
-for (const config of buildingConfigs) {
-  const building = new Building(game, config);
-  game.addEntity(building);
-  combatSystem.registerBuilding(building);
-}
-
-// 创建防空炮
-const antiAirConfigs = [
-  { x: -5, z: -15, fireRate: 2.5, range: 20 },
-  { x: 10, z: -20, fireRate: 3, range: 25 },
-];
-
-for (const config of antiAirConfigs) {
-  const aa = new AntiAir(game, config);
-  game.addEntity(aa);
-  combatSystem.registerAntiAir(aa);
-}
-
-// 创建道具
-const pickupConfigs = [
-  { x: 3, z: -5, type: 'health' },
-  { x: -8, z: -10, type: 'shield' },
-  { x: 10, z: -5, type: 'speed' },
-  { x: -3, z: -22, type: 'mega_bomb' },
-];
-
-for (const config of pickupConfigs) {
-  const pickup = new Pickup(game, config);
-  game.addEntity(pickup);
-  combatSystem.registerPickup(pickup);
-}
+// UI 管理器
+const uiManager = new UIManager(game);
+game.uiManager = uiManager;
 
 // =============================
-// 简易 HUD 显示
+// 游戏流程控制
 // =============================
-const uiContainer = document.getElementById('ui-container');
-const hudHTML = `
-<div class="hud" id="game-hud">
-  <div class="hud-top-left" id="hp-display"></div>
-  <div class="hud-top-center" id="mission-display">
-    🎯 摧毁所有目标 | Q 切换武器 | 空格 射击/投弹 | WASD 移动
-  </div>
-  <div class="hud-top-right" id="score-display">0</div>
-  <div class="hud-bottom-left">
-    <div class="weapon-slot active" id="weapon-bomb">💣 炸弹</div>
-    <div class="weapon-slot" id="weapon-gun">🔫 机枪</div>
-  </div>
-  <div class="hud-bottom-right" id="targets-display">目标: 0/0</div>
-</div>
-`;
-uiContainer.innerHTML = hudHTML;
 
-// HUD 更新循环
-function updateHUD() {
-  // 生命值
-  const hpEl = document.getElementById('hp-display');
-  if (hpEl && player) {
-    let hearts = '';
-    for (let i = 0; i < player.maxHP; i++) {
-      hearts += `<span class="hud-heart ${i < player.hp ? '' : 'lost'}">❤️</span>`;
+// 开始关卡
+function startLevel(levelId) {
+  const data = LEVEL_DATA[levelId];
+  if (!data) return;
+
+  // 显示任务简报
+  uiManager.showCutscene(data, () => {
+    // 简报结束后正式开始
+    launchLevel(levelId);
+  });
+}
+
+// 正式启动关卡
+function launchLevel(levelId) {
+  // 创建玩家（如果没有）
+  if (!game.player) {
+    const player = new Player(game);
+    game.player = player;
+  }
+
+  // 应用升级
+  const save = LevelManager.loadSave();
+  if (save.upgrades) {
+    game.player.applyUpgrades(save.upgrades);
+  }
+
+  // 加载关卡
+  levelManager.loadLevel(game, levelId);
+
+  // 切换到游戏状态
+  game.setState('playing');
+  uiManager.showScreen('hud');
+}
+
+// 重新开始当前关卡
+function restartLevel() {
+  if (levelManager.currentLevelId) {
+    startLevel(levelManager.currentLevelId);
+  }
+}
+
+// 下一关
+function nextLevel() {
+  const nextId = levelManager.getNextLevelId();
+  if (nextId) {
+    startLevel(nextId);
+    // 刷新关卡选择界面的解锁状态
+    if (uiManager.screens.levelSelect) {
+      uiManager.screens.levelSelect.refresh();
     }
-    if (player.hasShield) hearts += '<span class="hud-heart">🛡️</span>';
-    hpEl.innerHTML = hearts;
+  } else {
+    // 全部通关
+    goToMenu();
   }
-
-  // 武器
-  const bombSlot = document.getElementById('weapon-bomb');
-  const gunSlot = document.getElementById('weapon-gun');
-  if (bombSlot && gunSlot && player) {
-    bombSlot.className = `weapon-slot ${player.currentWeapon === 'bomb' ? 'active' : ''}`;
-    gunSlot.className = `weapon-slot ${player.currentWeapon === 'gun' ? 'active' : ''}`;
-  }
-
-  // 分数
-  const scoreEl = document.getElementById('score-display');
-  if (scoreEl && player) {
-    scoreEl.textContent = `💰 ${player.stats.targetsDestroyed * 100}`;
-  }
-
-  // 目标
-  const targetsEl = document.getElementById('targets-display');
-  if (targetsEl) {
-    const remaining = combatSystem.getRemainingTargets();
-    const total = combatSystem.buildings.length + combatSystem.antiAirs.length + 
-                  combatSystem.buildings.filter(b => b.isDestroyed).length +
-                  combatSystem.antiAirs.filter(a => a.isDestroyed).length;
-    targetsEl.textContent = `🎯 目标: ${remaining}`;
-  }
-
-  requestAnimationFrame(updateHUD);
 }
-updateHUD();
+
+// 返回主菜单
+function goToMenu() {
+  game.clearEntities();
+  game.sceneManager.clearScene();
+  game.player = null;
+  game.setState('menu');
+  uiManager.showScreen('mainMenu');
+}
 
 // =============================
-// 启动游戏
+// 注册所有 UI 屏幕
 // =============================
-game.setState('playing');
+
+// 主菜单
+const mainMenu = new MainMenu(game, uiManager);
+uiManager.registerScreen('mainMenu', mainMenu);
+
+// 关卡选择
+const levelSelect = new LevelSelect(game, uiManager, (levelId) => {
+  startLevel(levelId);
+});
+uiManager.registerScreen('levelSelect', levelSelect);
+
+// HUD
+const hud = new HUD(game);
+uiManager.registerScreen('hud', hud);
+
+// 暂停菜单
+const pauseMenu = new PauseMenu(game, uiManager, {
+  onRestart: () => restartLevel(),
+  onQuit: () => goToMenu()
+});
+uiManager.registerScreen('pause', pauseMenu);
+
+// 结算屏
+const resultScreen = new ResultScreen(game, uiManager, {
+  onRestart: () => restartLevel(),
+  onNext: () => nextLevel(),
+  onQuit: () => goToMenu()
+});
+uiManager.registerScreen('result', resultScreen);
+
+// 过场动画
+const cutscene = new Cutscene(game, uiManager);
+uiManager.registerScreen('cutscene', cutscene);
+
+// 商店
+const shop = new Shop(game, uiManager);
+uiManager.registerScreen('shop', shop);
+
+// 成就
+const achievements = new Achievements(game, uiManager);
+uiManager.registerScreen('achievements', achievements);
+
+// =============================
+// 重覆商店和成就的 showScreen 来触发渲染
+// =============================
+const originalShowScreen = uiManager.showScreen.bind(uiManager);
+uiManager.showScreen = (name) => {
+  originalShowScreen(name);
+  if (name === 'shop') shop.show();
+  if (name === 'achievements') achievements.show();
+  if (name === 'levelSelect') levelSelect.refresh();
+};
+
+// =============================
+// 启动 HUD 更新循环
+// =============================
+uiManager.startHUDUpdate();
+
+// =============================
+// 显示主菜单并启动渲染循环
+// =============================
+uiManager.showScreen('mainMenu');
 game.start();
 
 // 全局暴露便于调试
 window.game = game;
 
-console.log('🎮 Bomb Iran - 战斗测试场景！');
-console.log('🕹️ WASD 移动 | 空格 射击/投弹 | Q 切换武器');
-console.log(`📊 目标: ${combatSystem.getRemainingTargets()} 个建筑/防空`);
+console.log('🎮 Bomb Iran 启动成功！');
+console.log('🕹️ WASD 移动 | 空格 射击/投弹 | Q 切换武器 | ESC 暂停');
