@@ -68,10 +68,12 @@ export class SkySystem {
     this.scene = scene;
     this.currentPreset = null;
 
-    // 创建 Sky 对象
+    // 创建 Sky 对象（仅用于生成环境贴图，不直接添加到可见场景）
     this.sky = new Sky();
     this.sky.scale.setScalar(450000);
-    this.scene.add(this.sky);
+    // 注意：不添加到 this.scene，避免超亮太阳光盘直接渲染
+    this.skyScene = new THREE.Scene();
+    this.skyScene.add(this.sky);
 
     // 太阳位置向量
     this.sunPosition = new THREE.Vector3();
@@ -142,13 +144,19 @@ export class SkySystem {
       this.envMap.dispose();
     }
 
-    // 用小尺寸的渲染目标生成环境贴图（性能优先）
-    const renderTarget = this.pmremGenerator.fromScene(this.sky);
+    // 使用独立的 skyScene 生成环境贴图
+    // PMREM 会自动对 HDR 进行预过滤，压制太阳光盘的极端亮度
+    const renderTarget = this.pmremGenerator.fromScene(this.skyScene);
     this.envMap = renderTarget.texture;
 
-    // 设置场景环境（间接照明）— 降低强度避免过曝
+    // 用环境贴图作为背景（PMREM 已压缩 HDR 峰值）
+    this.scene.background = this.envMap;
+    this.scene.backgroundIntensity = 0.35; // 控制天空背景亮度（低值避免边缘过亮）
+    this.scene.backgroundBlurriness = 0.05; // 模糊柔化太阳光盘和地平线
+
+    // 设置场景环境（间接照明用）
     this.scene.environment = this.envMap;
-    this.scene.environmentIntensity = 0.3; // 控制环境反射强度
+    this.scene.environmentIntensity = 0.25;
 
     // 通知材质工厂更新所有材质
     setGlobalEnvMap(this.envMap);
@@ -278,7 +286,8 @@ export class SkySystem {
   dispose() {
     this.clearClouds();
     this.scene.remove(this.cloudGroup);
-    this.scene.remove(this.sky);
+    // skyScene 中的 sky 对象也要清理
+    this.skyScene.remove(this.sky);
     if (this.envMap) this.envMap.dispose();
     this.pmremGenerator.dispose();
   }

@@ -81,8 +81,8 @@ export class Player {
       fuelUsed: 0
     };
 
-    // 创建飞机模型
-    this.mesh = this.createPlaneModel();
+    // 创建飞机模型（从 AssetLoader 获取）
+    this.mesh = this.createPlaneModel(game);
     this.mesh.position.set(0, this.altitude, 0);
     game.sceneManager.scene.add(this.mesh);
 
@@ -97,64 +97,38 @@ export class Player {
     this.emptyClipTimer = 0;
   }
 
-  createPlaneModel() {
-    const group = new THREE.Group();
+  createPlaneModel(game) {
+    // 从 AssetLoader 获取预加载的 GLTF 模型
+    const group = game.assetLoader.getModel('player');
 
-    // 机身
-    const bodyGeo = new THREE.CylinderGeometry(0.3, 0.4, 2.5, 8);
-    const bodyMat = createMaterial('paint', COLORS.player);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.rotation.x = Math.PI / 2;
-    body.castShadow = true;
-    group.add(body);
+    // 获取推进器引用（由 AssetLoader 存储在 userData 中）
+    this.thruster = group.userData.thruster || null;
 
-    // 驾驶舱
-    const cockpitGeo = new THREE.SphereGeometry(0.3, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    const cockpitMat = createMaterial('glass', 0x74b9ff);
-    const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 0.25, -0.3);
-    cockpit.rotation.x = -Math.PI / 6;
-    group.add(cockpit);
+    // 如果推进器引用丢失（clone 后 userData 可能不包含 Mesh 引用）
+    // 需要手动查找或重新创建
+    if (!this.thruster) {
+      // 在 clone 的 group 中查找推进器（最后一个 ConeGeometry Mesh）
+      group.traverse((child) => {
+        if (child.isMesh && child.geometry.type === 'ConeGeometry' && child.material.emissive) {
+          this.thruster = child;
+        }
+      });
+    }
 
-    // 左翼
-    const wingGeo = new THREE.BoxGeometry(3.5, 0.08, 0.8);
-    const wingMat = createMaterial('paint', COLORS.playerWing);
-    const leftWing = new THREE.Mesh(wingGeo, wingMat);
-    leftWing.position.set(0, -0.05, 0.2);
-    leftWing.castShadow = true;
-    group.add(leftWing);
+    // 兜底：如果仍然没找到推进器，创建一个
+    if (!this.thruster) {
+      const thrusterGeo = new THREE.ConeGeometry(0.14, 0.6, 6);
+      const thrusterMat = new THREE.MeshStandardMaterial({
+        color: 0xff6b35,
+        emissive: new THREE.Color(0xff6b35),
+        emissiveIntensity: 2.0
+      });
+      this.thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
+      this.thruster.position.set(0, 0, 1.75);
+      this.thruster.rotation.x = -Math.PI / 2;
+      group.add(this.thruster);
+    }
 
-    // 尾翼（水平）
-    const tailWingGeo = new THREE.BoxGeometry(1.2, 0.06, 0.4);
-    const tailWing = new THREE.Mesh(tailWingGeo, createMaterial('paint', COLORS.playerWing));
-    tailWing.position.set(0, 0, 1.2);
-    group.add(tailWing);
-
-    // 尾翼（垂直）
-    const vTailGeo = new THREE.BoxGeometry(0.06, 0.6, 0.4);
-    const vTail = new THREE.Mesh(vTailGeo, createMaterial('paint', COLORS.playerWing));
-    vTail.position.set(0, 0.3, 1.2);
-    group.add(vTail);
-
-    // 推进器火焰
-    const thrusterGeo = new THREE.ConeGeometry(0.15, 0.5, 6);
-    const thrusterMat = createMaterial('emissive', 0xff6b35);
-    this.thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
-    this.thruster.position.set(0, 0, 1.5);
-    this.thruster.rotation.x = -Math.PI / 2;
-    group.add(this.thruster);
-
-    // 翼下挂架（视觉上显示导弹和副油箱的挂载点）
-    const pylonGeo = new THREE.BoxGeometry(0.06, 0.2, 0.3);
-    const pylonMat = createMaterial('metal', 0x636e72);
-    const leftPylon = new THREE.Mesh(pylonGeo, pylonMat);
-    leftPylon.position.set(-1.2, -0.2, 0.2);
-    group.add(leftPylon);
-    const rightPylon = new THREE.Mesh(pylonGeo, pylonMat);
-    rightPylon.position.set(1.2, -0.2, 0.2);
-    group.add(rightPylon);
-
-    group.scale.set(0.8, 0.8, 0.8);
     return group;
   }
 
@@ -197,16 +171,20 @@ export class Player {
     this.mesh.rotation.x += (pitchTarget - this.mesh.rotation.x) * 3 * deltaTime;
 
     // 推进器火焰闪烁（无燃料时火焰熄灭）
-    if (!this.isFuelEmpty) {
-      this.thrusterFlicker += deltaTime * 15;
-      const flickerScale = 0.8 + Math.sin(this.thrusterFlicker) * 0.3;
-      this.thruster.scale.y = flickerScale;
-      this.thruster.material.color.setHex(
-        Math.random() > 0.5 ? 0xff6b35 : 0xffd93d
-      );
-      this.thruster.visible = true;
-    } else {
-      this.thruster.visible = false;
+    if (this.thruster && this.thruster.scale) {
+      if (!this.isFuelEmpty) {
+        this.thrusterFlicker += deltaTime * 15;
+        const flickerScale = 0.8 + Math.sin(this.thrusterFlicker) * 0.3;
+        this.thruster.scale.y = flickerScale;
+        if (this.thruster.material && this.thruster.material.color) {
+          this.thruster.material.color.setHex(
+            Math.random() > 0.5 ? 0xff6b35 : 0xffd93d
+          );
+        }
+        this.thruster.visible = true;
+      } else {
+        this.thruster.visible = false;
+      }
     }
 
     // === 武器切换 ===

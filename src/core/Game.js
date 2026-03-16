@@ -5,6 +5,7 @@ import { SceneManager } from './SceneManager.js';
 import { PhysicsWorld } from './PhysicsWorld.js';
 import { InputManager } from './InputManager.js';
 import { AudioManager } from './AudioManager.js';
+import { AssetLoader } from './AssetLoader.js';
 import { GAME_STATES } from '../utils/constants.js';
 
 export class Game {
@@ -14,6 +15,7 @@ export class Game {
     this.physicsWorld = new PhysicsWorld();
     this.inputManager = new InputManager();
     this.audioManager = new AudioManager();
+    this.assetLoader = new AssetLoader();
 
     // 游戏状态
     this.state = GAME_STATES.MENU;
@@ -127,6 +129,12 @@ export class Game {
     }
     this.entities = [];
     this.entitiesToRemove = [];
+  }
+
+  // 初始化（预加载全部资源）
+  async init() {
+    await this.assetLoader.preloadAll();
+    console.log('🎮 游戏资源初始化完成');
   }
 
   // 启动游戏循环

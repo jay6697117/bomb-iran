@@ -43,8 +43,8 @@ export class EnemyFighter {
     // 脱离参数
     this.disengageDirection = new THREE.Vector3();
 
-    // 创建战斗机模型
-    this.mesh = this.createFighterModel();
+    // 创建战斗机模型（从 AssetLoader 获取）
+    this.mesh = this.createFighterModel(game);
     this.mesh.position.set(x, y, z);
     game.sceneManager.scene.add(this.mesh);
 
@@ -52,53 +52,41 @@ export class EnemyFighter {
     this.direction = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
   }
 
-  createFighterModel() {
-    const group = new THREE.Group();
+  createFighterModel(game) {
+    // 从 AssetLoader 获取预加载的 GLTF 模型
+    const group = game.assetLoader.getModel('enemy_fighter');
 
-    // 机身（红色）
-    const bodyGeo = new THREE.CylinderGeometry(0.2, 0.3, 2, 6);
-    const bodyMat = createMaterial('paint', COLORS.enemyFighter);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.rotation.x = Math.PI / 2;
-    body.castShadow = true;
-    group.add(body);
+    // 获取引擎引用用于火焰动画
+    this.engine = group.userData.engine || null;
+    this.engine2 = group.userData.engine2 || null;
 
-    // 驾驶舱
-    const cockpitGeo = new THREE.SphereGeometry(0.2, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2);
-    const cockpitMat = createMaterial('glass', 0x2d3436);
-    const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 0.18, -0.2);
-    group.add(cockpit);
+    // clone 后 userData 引用可能丢失，手动查找
+    if (!this.engine) {
+      const cones = [];
+      group.traverse((child) => {
+        if (child.isMesh && child.geometry.type === 'ConeGeometry') {
+          cones.push(child);
+        }
+      });
+      // 最后两个 ConeGeometry 通常是引擎火焰
+      if (cones.length >= 2) {
+        this.engine = cones[cones.length - 2];
+        this.engine2 = cones[cones.length - 1];
+      } else if (cones.length === 1) {
+        this.engine = cones[0];
+      }
+    }
 
-    // 机翼（后掠翼）
-    const wingGeo = new THREE.BoxGeometry(2.5, 0.05, 0.6);
-    const wingMat = createMaterial('paint', COLORS.enemyFighterWing);
-    const wing = new THREE.Mesh(wingGeo, wingMat);
-    wing.position.set(0, -0.02, 0.15);
-    wing.castShadow = true;
-    group.add(wing);
+    // 兜底
+    if (!this.engine) {
+      const engineGeo = new THREE.ConeGeometry(0.08, 0.35, 5);
+      const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6b35 });
+      this.engine = new THREE.Mesh(engineGeo, engineMat);
+      this.engine.rotation.x = -Math.PI / 2;
+      this.engine.position.set(0, 0, 1.1);
+      group.add(this.engine);
+    }
 
-    // 尾翼
-    const tailGeo = new THREE.BoxGeometry(0.8, 0.04, 0.3);
-    const tail = new THREE.Mesh(tailGeo, createMaterial('paint', COLORS.enemyFighterWing));
-    tail.position.set(0, 0, 0.9);
-    group.add(tail);
-
-    // 垂直尾翼
-    const vTailGeo = new THREE.BoxGeometry(0.04, 0.4, 0.3);
-    const vTail = new THREE.Mesh(vTailGeo, createMaterial('paint', COLORS.enemyFighterWing));
-    vTail.position.set(0, 0.2, 0.9);
-    group.add(vTail);
-
-    // 发动机喷口
-    const engineGeo = new THREE.ConeGeometry(0.1, 0.3, 4);
-    const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6b35 });
-    this.engine = new THREE.Mesh(engineGeo, engineMat);
-    this.engine.rotation.x = -Math.PI / 2;
-    this.engine.position.set(0, 0, 1.1);
-    group.add(this.engine);
-
-    group.scale.set(0.7, 0.7, 0.7);
     return group;
   }
 

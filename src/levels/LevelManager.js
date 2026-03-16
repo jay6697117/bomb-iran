@@ -128,6 +128,9 @@ export class LevelManager {
 
   // 每帧更新
   update(game, deltaTime) {
+    // 更新地形（风动画 + 水面 Shader）
+    this.terrain.update(deltaTime);
+
     if (this.isComplete || !this.currentLevelData) return;
 
     this.elapsedTime = (performance.now() - this.startTime) / 1000;

@@ -167,10 +167,12 @@ uiManager.showScreen = (name) => {
 uiManager.startHUDUpdate();
 
 // =============================
-// 显示主菜单并启动渲染循环
+// 预加载资源 → 显示主菜单 → 启动渲染循环
 // =============================
-uiManager.showScreen('mainMenu');
-game.start();
+game.init().then(() => {
+  uiManager.showScreen('mainMenu');
+  game.start();
+});
 
 // 全局暴露便于调试
 window.game = game;

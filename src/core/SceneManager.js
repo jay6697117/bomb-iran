@@ -29,7 +29,7 @@ export class SceneManager {
     this.renderer.shadowMap.type = THREE.VSMShadowMap; // 高质量软阴影
     this.renderer.setClearColor(0x000000); // 天空系统接管背景色
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.7;
+    this.renderer.toneMappingExposure = 0.8;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     // 场景
@@ -185,7 +185,8 @@ export class SceneManager {
     this.scene.traverse((child) => {
       if (child.isMesh || child.isGroup) {
         // 保留天空系统的对象
-        if (child === this.skySystem.sky || child === this.skySystem.cloudGroup) return;
+        // 跳过云层对象（天空通过环境贴图渲染，不在场景中）
+        if (child === this.skySystem.cloudGroup) return;
         if (child.parent === this.skySystem.cloudGroup) return;
         toRemove.push(child);
       }

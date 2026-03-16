@@ -60,7 +60,7 @@ const MATERIAL_PRESETS = {
     MaterialClass: THREE.MeshStandardMaterial,
     metalness: 0.0,
     roughness: 0.5,
-    emissiveIntensity: 2.0,
+    emissiveIntensity: 0.6,
   },
   // 植被（树叶/仙人掌）
   foliage: {

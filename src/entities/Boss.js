@@ -1,5 +1,6 @@
 // ============================
 // BOSS 实体 - 多阶段攻击的大型敌人
+// 使用 AssetLoader 预加载的 GLTF 模型
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
@@ -19,67 +20,17 @@ export class Boss {
     this.flashTimer = 0;
     this.type = 'boss';
 
-    // BOSS 主体 - 大型堡垒结构
-    this.mesh = new THREE.Group();
+    // 从 AssetLoader 获取 GLTF 模型
+    this.mesh = game.assetLoader.getModel('boss');
 
-    // 主体底座
-    const baseGeo = new THREE.BoxGeometry(8, 3, 6);
-    const baseMat = createMaterial('metal', 0x2c3e50);
-    const base = new THREE.Mesh(baseGeo, baseMat);
-    base.castShadow = true;
-    base.receiveShadow = true;
-    base.position.y = 1.5;
-    this.mesh.add(base);
+    // 获取关键子部件引用
+    this.tower = null;
+    this.antenna = null;
+    this.glowOrb = null;
+    this.bossLight = null;
 
-    // 核心塔
-    const towerGeo = new THREE.CylinderGeometry(1.5, 2, 5, 8);
-    const towerMat = createMaterial('paint', 0xe74c3c);
-    this.tower = new THREE.Mesh(towerGeo, towerMat);
-    this.tower.castShadow = true;
-    this.tower.position.y = 5.5;
-    this.mesh.add(this.tower);
-
-    // 侧翼炮台 × 2
-    const turretGeo = new THREE.CylinderGeometry(0.8, 1, 2.5, 6);
-    const turretMat = createMaterial('metal', 0x636e72);
-    const leftTurret = new THREE.Mesh(turretGeo, turretMat);
-    leftTurret.castShadow = true;
-    leftTurret.position.set(-3.5, 4, 0);
-    this.mesh.add(leftTurret);
-
-    const rightTurret = new THREE.Mesh(turretGeo.clone(), turretMat.clone());
-    rightTurret.castShadow = true;
-    rightTurret.position.set(3.5, 4, 0);
-    this.mesh.add(rightTurret);
-
-    // 顶部天线（发光体，触发 Bloom）
-    const antennaGeo = new THREE.CylinderGeometry(0.1, 0.1, 3, 4);
-    const antennaMat = new THREE.MeshBasicMaterial({
-      color: 0xff4444,
-      transparent: true,
-      opacity: 0.9
-    });
-    this.antenna = new THREE.Mesh(antennaGeo, antennaMat);
-    this.antenna.position.y = 9.5;
-    this.mesh.add(this.antenna);
-
-    // 天线顶部发光球
-    const glowGeo = new THREE.SphereGeometry(0.3, 8, 6);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      blending: THREE.AdditiveBlending,
-      transparent: true,
-      opacity: 0.8,
-      depthWrite: false
-    });
-    this.glowOrb = new THREE.Mesh(glowGeo, glowMat);
-    this.glowOrb.position.y = 11;
-    this.mesh.add(this.glowOrb);
-
-    // BOSS 发光点光源
-    this.bossLight = new THREE.PointLight(0xff4444, 2, 15);
-    this.bossLight.position.y = 8;
-    this.mesh.add(this.bossLight);
+    // 从模型中查找关键部件
+    this.findModelParts();
 
     this.mesh.position.copy(this.position);
     game.sceneManager.scene.add(this.mesh);
@@ -94,6 +45,69 @@ export class Boss {
     this.body.entity = this;
     this.body.collisionResponse = true;
     game.physicsWorld.addBody(this.body);
+  }
+
+  // 查找模型中的关键部件引用
+  findModelParts() {
+    // 先检查 userData（直接创建的模型会有）
+    if (this.mesh.userData.tower) {
+      this.tower = this.mesh.userData.tower;
+    }
+    if (this.mesh.userData.glowOrb) {
+      this.glowOrb = this.mesh.userData.glowOrb;
+    }
+    if (this.mesh.userData.bossLight) {
+      this.bossLight = this.mesh.userData.bossLight;
+    }
+    if (this.mesh.userData.antenna) {
+      this.antenna = this.mesh.userData.antenna;
+    }
+
+    // clone 后 userData 引用丢失，需要按名称/类型查找
+    if (!this.tower || !this.glowOrb || !this.bossLight) {
+      this.mesh.traverse((child) => {
+        // 查找塔（CylinderGeometry，红色涂装，y > 4）
+        if (!this.tower && child.isMesh && child.geometry.type === 'CylinderGeometry') {
+          if (child.material.color && child.material.color.getHex() === 0xe74c3c) {
+            this.tower = child;
+          }
+        }
+        // 查找发光球（AdditiveBlending 的球体）
+        if (!this.glowOrb && child.isMesh && child.geometry.type === 'SphereGeometry') {
+          if (child.material.blending === THREE.AdditiveBlending) {
+            this.glowOrb = child;
+          }
+        }
+        // 查找点光源
+        if (!this.bossLight && child.isPointLight) {
+          this.bossLight = child;
+        }
+      });
+    }
+
+    // 兜底：创建缺失的部件
+    if (!this.tower) {
+      const towerGeo = new THREE.CylinderGeometry(1.2, 1.8, 4, 8);
+      const towerMat = createMaterial('paint', 0xe74c3c);
+      this.tower = new THREE.Mesh(towerGeo, towerMat);
+      this.tower.position.y = 5.5;
+      this.mesh.add(this.tower);
+    }
+    if (!this.glowOrb) {
+      const glowGeo = new THREE.SphereGeometry(0.35, 10, 8);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xff0000, blending: THREE.AdditiveBlending,
+        transparent: true, opacity: 0.8, depthWrite: false
+      });
+      this.glowOrb = new THREE.Mesh(glowGeo, glowMat);
+      this.glowOrb.position.y = 10.4;
+      this.mesh.add(this.glowOrb);
+    }
+    if (!this.bossLight) {
+      this.bossLight = new THREE.PointLight(0xff4444, 2, 15);
+      this.bossLight.position.y = 8;
+      this.mesh.add(this.bossLight);
+    }
   }
 
   update(game, deltaTime) {
@@ -111,17 +125,25 @@ export class Boss {
 
     // 天线发光脉冲
     const pulse = Math.sin(performance.now() * 0.005) * 0.5 + 0.5;
-    this.glowOrb.material.opacity = 0.5 + pulse * 0.5;
-    this.bossLight.intensity = 1 + pulse * 2;
+    if (this.glowOrb) {
+      this.glowOrb.material.opacity = 0.5 + pulse * 0.5;
+    }
+    if (this.bossLight) {
+      this.bossLight.intensity = 1 + pulse * 2;
+    }
 
     // 受伤闪烁
     if (this.flashTimer > 0) {
       this.flashTimer -= deltaTime;
-      this.tower.material.emissive.setHex(
-        Math.sin(this.flashTimer * 30) > 0 ? 0xff0000 : 0x000000
-      );
+      if (this.tower && this.tower.material.emissive) {
+        this.tower.material.emissive.setHex(
+          Math.sin(this.flashTimer * 30) > 0 ? 0xff0000 : 0x000000
+        );
+      }
     } else {
-      this.tower.material.emissive.setHex(0x000000);
+      if (this.tower && this.tower.material.emissive) {
+        this.tower.material.emissive.setHex(0x000000);
+      }
     }
 
     if (!game.player) return;
@@ -168,7 +190,7 @@ export class Boss {
       origin.z += oz;
       const dir = playerPos.clone().sub(origin).normalize();
 
-      // 创建敌方子弹（简单方式：复用 AntiAir 的射击逻辑）
+      // 创建敌方子弹
       const bulletGeo = new THREE.SphereGeometry(0.15, 6, 4);
       const bulletMat = new THREE.MeshBasicMaterial({
         color: 0xff4444,
@@ -266,8 +288,12 @@ export class Boss {
 
     // 阶段颜色变化
     const colors = [0xe74c3c, 0xff6600, 0xff0000];
-    this.tower.material.color.setHex(colors[this.phase - 1]);
-    this.bossLight.color.setHex(colors[this.phase - 1]);
+    if (this.tower && this.tower.material.color) {
+      this.tower.material.color.setHex(colors[this.phase - 1]);
+    }
+    if (this.bossLight) {
+      this.bossLight.color.setHex(colors[this.phase - 1]);
+    }
   }
 
   // 受伤
