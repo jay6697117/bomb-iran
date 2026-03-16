@@ -513,3 +513,125 @@ body {
 .ach-name { font-weight: 700; font-size: 15px; }
 .ach-desc { font-size: 13px; color: #888; margin-top: 2px; }
 .ach-reward { color: #feca57; font-weight: 700; font-size: 14px; }
+
+/* ===== BOSS 血量条 ===== */
+.boss-hp-container {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  pointer-events: none;
+  animation: bossAppear 0.5s ease-out;
+}
+@keyframes bossAppear {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.boss-hp-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff4444;
+  white-space: nowrap;
+  animation: bossPulse 1.5s ease-in-out infinite;
+}
+@keyframes bossPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.boss-hp-bar {
+  width: 250px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.boss-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e74c3c, #ff6b35);
+  border-radius: 6px;
+  transition: width 0.3s ease, background 0.5s ease;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+}
+.boss-hp-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff6b35;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ===== 成就弹窗通知 ===== */
+.achievement-notify-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.achievement-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(20, 20, 30, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(254, 202, 87, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(254, 202, 87, 0.1);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 300px;
+}
+.achievement-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+.achievement-toast.hide {
+  transform: translateX(120%);
+  opacity: 0;
+}
+.achievement-toast-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.achievement-toast-content {
+  flex: 1;
+}
+.achievement-toast-title {
+  font-size: 11px;
+  color: #feca57;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+.achievement-toast-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 2px;
+}
+.achievement-toast-desc {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+.achievement-toast-reward {
+  font-size: 14px;
+  font-weight: 700;
+  color: #feca57;
+  flex-shrink: 0;
+}
+

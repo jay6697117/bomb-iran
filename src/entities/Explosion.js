@@ -14,9 +14,14 @@ export class Explosion {
     this.radius = radius;
 
     // 爆炸光源（短暂闪光）
-    this.light = new THREE.PointLight(0xff6b35, 3, radius * 3);
+    this.light = new THREE.PointLight(0xff6b35, 5, radius * 4);
     this.light.position.copy(position);
     game.sceneManager.scene.add(this.light);
+
+    // 触发屏幕震动和色差闪烁
+    const shakeIntensity = isMega ? 0.02 : 0.008;
+    game.sceneManager.screenShake(shakeIntensity, 0.4);
+    game.sceneManager.hitFlash(0.008, 0.12);
 
     // 冲击波环
     const ringGeo = new THREE.RingGeometry(0.1, 0.5, 16);
@@ -32,12 +37,14 @@ export class Explosion {
     this.ring.rotation.x = -Math.PI / 2;
     game.sceneManager.scene.add(this.ring);
 
-    // 爆炸球体（快速膨胀后消失）
+    // 爆炸球体（快速膨胀后消失，使用 AdditiveBlending 触发 Bloom）
     const sphereGeo = new THREE.SphereGeometry(0.5, 8, 6);
     const sphereMat = new THREE.MeshBasicMaterial({
       color: COLORS.explosionInner,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     this.sphere = new THREE.Mesh(sphereGeo, sphereMat);
     this.sphere.position.copy(position);

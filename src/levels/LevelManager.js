@@ -7,6 +7,7 @@ import { Building } from '../entities/Building.js';
 import { AntiAir } from '../entities/AntiAir.js';
 import { Pickup } from '../entities/Pickup.js';
 import { Missile } from '../entities/Missile.js';
+import { Boss } from '../entities/Boss.js';
 
 export class LevelManager {
   constructor() {
@@ -17,7 +18,8 @@ export class LevelManager {
     this.elapsedTime = 0;
     this.isComplete = false;
     this.missileTimer = 0;
-    this.missileInterval = 8; // 导弹发射间隔秒
+    this.missileInterval = 8;
+    this.boss = null; // BOSS 实体引用
   }
 
   // 加载关卡
@@ -63,6 +65,13 @@ export class LevelManager {
       if (game.combatSystem) game.combatSystem.registerPickup(pickup);
     }
 
+    // 生成 BOSS（如果关卡配置中有）
+    this.boss = null;
+    if (data.boss) {
+      this.boss = new Boss(game, data.boss);
+      game.addEntity(this.boss);
+    }
+
     // 重置玩家
     if (game.player) {
       game.player.reset(game);
@@ -91,7 +100,9 @@ export class LevelManager {
     // 检查关卡完成条件
     if (game.combatSystem) {
       const remaining = game.combatSystem.getRemainingTargets();
-      if (remaining === 0) {
+      // 如果有 BOSS，需要同时击败 BOSS
+      const bossAlive = this.boss && this.boss.isAlive;
+      if (remaining === 0 && !bossAlive) {
         this.completeLevel(game);
       }
     }

@@ -54,6 +54,17 @@ export class CombatSystem {
             break;
           }
         }
+
+        // 子弹 vs BOSS
+        const boss = game.levelManager?.boss;
+        if (boss && boss.isAlive) {
+          const dist = entity.mesh.position.distanceTo(boss.mesh.position);
+          if (dist < 5) {
+            boss.takeDamage(game, entity.damage);
+            entity.isActive = false;
+            game.removeEntity(entity);
+          }
+        }
       }
     }
 
@@ -79,6 +90,26 @@ export class CombatSystem {
           if (dist < radius + 1) {
             aa.takeDamage(game, 5);
           }
+        }
+
+        // 爆炸 vs BOSS
+        const boss = game.levelManager?.boss;
+        if (boss && boss.isAlive) {
+          const dist = distanceXZ(pos, boss.mesh.position);
+          if (dist < radius + 5) {
+            boss.takeDamage(game, 15);
+          }
+        }
+      }
+    }
+
+    // BOSS 子弹/导弹 vs 玩家
+    for (const entity of game.entities) {
+      if ((entity.type === 'enemy_bullet' || entity.type === 'boss_missile') && game.player) {
+        const dist = entity.mesh.position.distanceTo(playerPos);
+        if (dist < 1.5) {
+          game.player.takeDamage(game, entity.damage || 1);
+          game.removeEntity(entity);
         }
       }
     }

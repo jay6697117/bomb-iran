@@ -1,7 +1,8 @@
 // ============================
-// 场景管理器 - Three.js 场景/相机/渲染器/光照
+// 场景管理器 - Three.js 场景/相机/渲染器/光照/后处理
 // ============================
 import * as THREE from 'three';
+import { PostProcessing } from './PostProcessing.js';
 
 export class SceneManager {
   constructor(canvas) {
@@ -40,6 +41,9 @@ export class SceneManager {
 
     // 光照
     this.setupLights();
+
+    // 后处理管线（Bloom/暗角/色差/震动）
+    this.postProcessing = new PostProcessing(this.renderer, this.scene, this.camera);
 
     // 窗口自适应
     window.addEventListener('resize', () => this.onResize());
@@ -113,12 +117,31 @@ export class SceneManager {
   }
 
   onResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(w, h);
+    this.postProcessing.onResize(w, h);
   }
 
+  // 渲染（通过后处理管线）
   render() {
-    this.renderer.render(this.scene, this.camera);
+    this.postProcessing.render();
+  }
+
+  // 更新后处理效果（每帧调用）
+  updatePostProcessing(deltaTime) {
+    this.postProcessing.update(deltaTime);
+  }
+
+  // 快捷方法：屏幕震动
+  screenShake(intensity = 0.01, duration = 0.3) {
+    this.postProcessing.shake(intensity, duration);
+  }
+
+  // 快捷方法：受击闪烁
+  hitFlash(intensity = 0.015, duration = 0.15) {
+    this.postProcessing.hitFlash(intensity, duration);
   }
 }

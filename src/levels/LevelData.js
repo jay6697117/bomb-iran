@@ -242,7 +242,8 @@ export const LEVEL_DATA = {
       { x: 10, z: -5, type: 'health' },
       { x: 0, z: -15, type: 'speed' },
     ],
-    missiles: true, par: 200
+    missiles: true, par: 200,
+    boss: { x: 0, z: -35, hp: 100 }
   },
 };
 

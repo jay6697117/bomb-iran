@@ -43,11 +43,13 @@ export class Pickup {
         geo = new THREE.SphereGeometry(0.35, 8, 6);
     }
 
-    // 主体（发光效果）
+    // 主体（发光效果，使用 AdditiveBlending 触发 Bloom）
     const mat = new THREE.MeshBasicMaterial({
       color: pickupConf.color,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const mainMesh = new THREE.Mesh(geo, mat);
     this.mesh.add(mainMesh);
@@ -57,7 +59,9 @@ export class Pickup {
     const glowMat = new THREE.MeshBasicMaterial({
       color: pickupConf.color,
       transparent: true,
-      opacity: 0.15
+      opacity: 0.2,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
     this.mesh.add(glow);

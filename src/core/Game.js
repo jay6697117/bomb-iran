@@ -167,6 +167,9 @@ export class Game {
     // 清除单次按键
     this.inputManager.update();
 
+    // 更新后处理效果
+    this.sceneManager.updatePostProcessing(deltaTime);
+
     // 渲染
     this.sceneManager.render();
   }
