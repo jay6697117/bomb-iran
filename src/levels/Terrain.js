@@ -12,10 +12,10 @@ import { createWaterSurface, updateWater } from '../shaders/WaterSurface.js';
 // 地形主题配置 - 色彩更鲜明、明亮
 const TERRAIN_THEMES = {
   desert: {
-    groundColor: 0xEDC9AF, // 更明媚的暖沙色
-    skyColor: 0xFDECB5,
-    fogColor: 0xFDECB5,
-    edgeColor: 0xDBB894,   
+    groundColor: 0xC4A882, // 柔和的中东土沙色
+    skyColor: 0xD6C9A8,    // 偏暖灰的沙漠天空
+    fogColor: 0xD6C9A8,
+    edgeColor: 0xB09872,   
     decorations: ['cactus', 'rock', 'dune', 'bush']
   },
   city: {
