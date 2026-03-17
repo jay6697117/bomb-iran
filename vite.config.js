@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 
+//我是vite
 export default defineConfig({
   root: '.',
   publicDir: 'public',
