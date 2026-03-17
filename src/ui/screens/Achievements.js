@@ -18,7 +18,8 @@ export class Achievements {
     const save = LevelManager.loadSave();
     const unlocked = save.achievements || [];
 
-    let html = '<h2>🏆 成就</h2><div class="achievement-list">';
+    let html = `<button class="game-btn secondary back-btn-top" id="btn-ach-back">← 返回</button>
+      <h2>🏆 成就</h2><div class="achievement-list">`;
 
     for (const ach of ACHIEVEMENTS) {
       const isUnlocked = unlocked.includes(ach.id);
@@ -35,8 +36,7 @@ export class Achievements {
     html += `</div>
       <div style="margin-top:16px;color:#888;font-size:14px">
         已解锁: ${unlocked.length} / ${ACHIEVEMENTS.length}
-      </div>
-      <button class="game-btn secondary" id="btn-ach-back" style="margin-top:16px">← 返回</button>`;
+      </div>`;
 
     this.el.innerHTML = html;
 

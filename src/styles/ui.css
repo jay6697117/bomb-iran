@@ -133,6 +133,7 @@ body {
 
 /* ===== 关卡选择 ===== */
 .level-select {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -594,8 +595,26 @@ body {
   padding: 4px 0;
 }
 
+/* ===== 左上角返回按钮 ===== */
+.back-btn-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  padding: 8px 18px !important;
+  font-size: 14px !important;
+  border-radius: 10px !important;
+  opacity: 0.85;
+  transition: all 0.2s ease !important;
+}
+.back-btn-top:hover {
+  opacity: 1;
+  transform: translateX(-3px) !important;
+}
+
 /* ===== 商店 ===== */
 .shop-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -665,6 +684,7 @@ body {
 
 /* ===== 成就 ===== */
 .achievements-screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

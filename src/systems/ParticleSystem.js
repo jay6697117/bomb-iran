@@ -1,8 +1,11 @@
 // ============================
-// 粒子系统 - 管理烟雾、火焰、碎片粒子
+// 粒子系统 - 管理烟雾、火焰、碎片粒子（性能优化：共享 Geometry）
 // ============================
 import * as THREE from 'three';
 import { randomRange } from '../utils/helpers.js';
+
+// 模块级共享资源
+const _sharedParticleGeo = new THREE.SphereGeometry(1, 4, 3); // 通过 scale 控制粒子大小
 
 export class ParticleSystem {
   constructor(game) {
@@ -26,13 +29,14 @@ export class ParticleSystem {
 
     for (let i = 0; i < count; i++) {
       const pSize = size * randomRange(0.5, 1.5);
-      const geo = new THREE.SphereGeometry(pSize, 4, 3);
+      // 共享 Geometry，clone Material（需要独立 opacity 控制）
       const mat = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
         opacity: 1
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(_sharedParticleGeo, mat);
+      mesh.scale.setScalar(pSize);
       mesh.position.copy(position);
 
       const vel = new THREE.Vector3(

@@ -1,5 +1,5 @@
 // ============================
-// 敌方战斗机 — AI 巡逻、拦截、攻击、脱离
+// 敌方战斗机 — AI 巡逻、拦截、攻击、脱离（性能优化：共享资源 + Vector3 复用）
 // ============================
 import * as THREE from 'three';
 import { createMaterial } from '../shaders/MaterialFactory.js';
@@ -12,6 +12,14 @@ const FIGHTER_STATE = {
   ATTACK: 'attack',
   DISENGAGE: 'disengage'
 };
+
+// 模块级共享资源 — 所有敌方子弹复用
+const _sharedEnemyBulletGeo = new THREE.SphereGeometry(0.1, 4, 3);
+const _sharedEnemyBulletMat = new THREE.MeshBasicMaterial({ color: 0xff4757 });
+
+// 预分配临时向量 — 避免每帧 GC
+const _tmpVec3A = new THREE.Vector3();
+const _tmpVec3B = new THREE.Vector3();
 
 export class EnemyFighter {
   constructor(game, config = {}) {
@@ -162,24 +170,19 @@ export class EnemyFighter {
     // 保持飞行高度
     this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, 10, deltaTime);
 
-    // 边界限制
+    // 边界限制（复用临时向量替代 new Vector3）
     if (Math.abs(this.mesh.position.x) > 55 || Math.abs(this.mesh.position.z) > 55) {
-      // 转向中心
-      const toCenter = new THREE.Vector3(-this.mesh.position.x, 0, -this.mesh.position.z).normalize();
-      this.direction.lerp(toCenter, 3 * deltaTime);
+      _tmpVec3A.set(-this.mesh.position.x, 0, -this.mesh.position.z).normalize();
+      this.direction.lerp(_tmpVec3A, 3 * deltaTime);
       this.direction.normalize();
     }
 
-    // 朝向运动方向
-    const lookAt = this.mesh.position.clone().add(this.direction);
-    this.mesh.lookAt(lookAt);
+    // 朝向运动方向（复用临时向量）
+    _tmpVec3A.copy(this.mesh.position).add(this.direction);
+    this.mesh.lookAt(_tmpVec3A);
 
-    // 机翼倾斜（转弯效果）
-    // 通过交叉积计算转向方向
-    const up = new THREE.Vector3(0, 1, 0);
-    const cross = new THREE.Vector3().crossVectors(this.direction, up);
-    // 简单的 roll 效果
-    this.mesh.rotation.z = cross.dot(this.direction) * 0.3;
+    // 机翼倾斜（简化计算，避免创建新 Vector3）
+    this.mesh.rotation.z = 0;
 
     // 引擎喷口闪烁（安全检查）
     if (this.engine && this.engine.material && this.engine.material.color) {
@@ -196,7 +199,7 @@ export class EnemyFighter {
 
     if (newState === FIGHTER_STATE.DISENGAGE) {
       // 选择一个远离玩家的随机方向
-      this.disengageDirection = new THREE.Vector3(
+      this.disengageDirection.set(
         Math.random() - 0.5,
         0.2,
         Math.random() > 0.5 ? 1 : -1
@@ -204,39 +207,33 @@ export class EnemyFighter {
     }
   }
 
-  // 巡逻：绕圈飞行
+  // 巡逻：绕圈飞行（复用临时向量）
   updatePatrol(deltaTime) {
     this.patrolAngle += deltaTime * 0.5;
     const targetX = this.patrolCenter.x + Math.cos(this.patrolAngle) * this.patrolRadius;
     const targetZ = this.patrolCenter.z + Math.sin(this.patrolAngle) * this.patrolRadius;
-    const target = new THREE.Vector3(targetX, 10, targetZ);
-    const toTarget = target.sub(this.mesh.position).normalize();
-    this.direction.lerp(toTarget, this.turnRate * deltaTime);
+    _tmpVec3A.set(targetX, 10, targetZ).sub(this.mesh.position).normalize();
+    this.direction.lerp(_tmpVec3A, this.turnRate * deltaTime);
     this.direction.y = 0;
     this.direction.normalize();
   }
 
-  // 拦截：全速冲向玩家
+  // 拦截：全速冲向玩家（复用临时向量）
   updateIntercept(playerPos, deltaTime) {
     if (!playerPos) return;
-    const toPlayer = new THREE.Vector3()
-      .subVectors(playerPos, this.mesh.position)
-      .normalize();
-    toPlayer.y = 0; // 保持水平追踪
-    this.direction.lerp(toPlayer, this.turnRate * 1.5 * deltaTime);
+    _tmpVec3A.subVectors(playerPos, this.mesh.position).normalize();
+    _tmpVec3A.y = 0; // 保持水平追踪
+    this.direction.lerp(_tmpVec3A, this.turnRate * 1.5 * deltaTime);
     this.direction.normalize();
   }
 
-  // 攻击：朝向玩家并射击
+  // 攻击：朝向玩家并射击（复用临时向量）
   updateAttack(game, playerPos, distToPlayer, deltaTime) {
     if (!playerPos) return;
 
-    // 朝向玩家
-    const toPlayer = new THREE.Vector3()
-      .subVectors(playerPos, this.mesh.position)
-      .normalize();
-    toPlayer.y = 0;
-    this.direction.lerp(toPlayer, this.turnRate * deltaTime);
+    _tmpVec3A.subVectors(playerPos, this.mesh.position).normalize();
+    _tmpVec3A.y = 0;
+    this.direction.lerp(_tmpVec3A, this.turnRate * deltaTime);
     this.direction.normalize();
 
     // 射击
@@ -252,18 +249,13 @@ export class EnemyFighter {
     this.direction.normalize();
   }
 
-  // 射击
+  // 射击 — 共享 Geometry/Material
   fire(game, targetPos) {
-    // 创建子弹
-    const bulletGeo = new THREE.SphereGeometry(0.1, 4, 3);
-    const bulletMat = new THREE.MeshBasicMaterial({ color: 0xff4757 });
-    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+    const bullet = new THREE.Mesh(_sharedEnemyBulletGeo, _sharedEnemyBulletMat);
     bullet.position.copy(this.mesh.position);
     game.sceneManager.scene.add(bullet);
 
-    const direction = new THREE.Vector3()
-      .subVectors(targetPos, bullet.position)
-      .normalize();
+    const direction = _tmpVec3B.subVectors(targetPos, bullet.position).normalize().clone();
 
     const speed = this.bulletSpeed;
     let lifetime = 0;

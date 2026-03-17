@@ -1,11 +1,16 @@
 // ============================
-// 可摧毁建筑实体
+// 可摧毁建筑实体（性能优化：共享碎片资源 + 减少碎片数量）
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { createMaterial } from '../shaders/MaterialFactory.js';
 import { PHYSICS, COLORS } from '../utils/constants.js';
 import { randomRange } from '../utils/helpers.js';
+
+// 模块级共享碎片资源
+const _sharedDebrisGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+const _sharedDebrisMat1 = createMaterial('stone', 0x95a5a6);
+const _sharedDebrisMat2 = createMaterial('stone', 0x636e72);
 
 export class Building {
   constructor(game, config) {
@@ -111,21 +116,20 @@ export class Building {
       game.sceneManager.scene.remove(dec);
     }
 
-    // 生成碎片
-    const debrisCount = PHYSICS.debrisCount;
+    // 生成碎片（减少数量 + 共享 Geometry/Material）
+    const debrisCount = 4;
+    const debrisShape = new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2));
     for (let i = 0; i < debrisCount; i++) {
-      const size = randomRange(0.2, 0.6);
-      const debrisGeo = new THREE.BoxGeometry(size, size, size);
-      const debrisMat = createMaterial('stone',
-        Math.random() > 0.5 ? 0x95a5a6 : 0x636e72
-      );
-      const debrisMesh = new THREE.Mesh(debrisGeo, debrisMat);
+      const scale = randomRange(0.5, 1.5);
+      const debrisMat = Math.random() > 0.5 ? _sharedDebrisMat1 : _sharedDebrisMat2;
+      const debrisMesh = new THREE.Mesh(_sharedDebrisGeo, debrisMat);
+      debrisMesh.scale.setScalar(scale);
       debrisMesh.castShadow = true;
       game.sceneManager.scene.add(debrisMesh);
 
       const debrisBody = new CANNON.Body({
         mass: PHYSICS.debrisMass,
-        shape: new CANNON.Box(new CANNON.Vec3(size / 2, size / 2, size / 2)),
+        shape: debrisShape,
         position: new CANNON.Vec3(
           pos.x + randomRange(-this.width / 2, this.width / 2),
           pos.y + randomRange(0, this.height / 2),
@@ -148,11 +152,11 @@ export class Building {
 
       game.physicsWorld.addBody(debrisBody, debrisMesh);
 
-      // 碎片自动消失（3秒后）
+      // 碎片自动消失（2秒后，缩短 1 秒）
       setTimeout(() => {
         game.sceneManager.scene.remove(debrisMesh);
         game.physicsWorld.removeBody(debrisBody);
-      }, 3000);
+      }, 2000);
     }
 
     // 通知战斗系统

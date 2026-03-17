@@ -21,7 +21,9 @@ export class LevelSelect {
 
   render() {
     const save = LevelManager.loadSave();
-    let html = '<h2>选择关卡</h2>';
+    // 返回按钮放在左上角
+    let html = '<button class="game-btn secondary back-btn-top" id="btn-back-menu">← 返回主菜单</button>';
+    html += '<h2>选择关卡</h2>';
 
     for (let chapter = 1; chapter <= 4; chapter++) {
       const levels = getChapterLevels(chapter);
@@ -44,7 +46,6 @@ export class LevelSelect {
       html += '</div></div>';
     }
 
-    html += '<button class="game-btn secondary" id="btn-back-menu" style="margin-top:20px">← 返回主菜单</button>';
     this.el.innerHTML = html;
 
     // 关卡点击

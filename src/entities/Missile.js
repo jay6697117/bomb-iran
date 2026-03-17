@@ -1,9 +1,24 @@
 // ============================
-// 跟踪导弹实体 - 锁定玩家追踪
+// 跟踪导弹实体 - 锁定玩家追踪（性能优化：共享资源 + Vector3 复用）
 // ============================
 import * as THREE from 'three';
 import { createMaterial } from '../shaders/MaterialFactory.js';
 import { COLORS } from '../utils/constants.js';
+
+// 模块级共享资源
+const _sharedBodyGeo = new THREE.ConeGeometry(0.1, 0.6, 6);
+const _sharedFlameGeo = new THREE.ConeGeometry(0.06, 0.3, 4);
+const _sharedFlameMat = new THREE.MeshBasicMaterial({ color: 0xfeca57 });
+const _sharedTrailGeo = new THREE.SphereGeometry(0.08, 4, 3);
+const _sharedTrailMat = new THREE.MeshBasicMaterial({
+  color: 0xaaaaaa,
+  transparent: true,
+  opacity: 0.4
+});
+
+// 预分配临时向量
+const _tmpToTarget = new THREE.Vector3();
+const _tmpLookAt = new THREE.Vector3();
 
 export class Missile {
   constructor(game, position, target) {
@@ -15,19 +30,16 @@ export class Missile {
     this.isActive = true;
     this.target = target;
 
-    // 模型 - 小圆锥
+    // 模型 - 小圆锥（共享 Geometry）
     this.mesh = new THREE.Group();
 
-    const bodyGeo = new THREE.ConeGeometry(0.1, 0.6, 6);
     const bodyMat = createMaterial('metal', COLORS.missile);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    const body = new THREE.Mesh(_sharedBodyGeo, bodyMat);
     body.rotation.x = Math.PI / 2;
     this.mesh.add(body);
 
-    // 尾焰
-    const flameGeo = new THREE.ConeGeometry(0.06, 0.3, 4);
-    const flameMat = new THREE.MeshBasicMaterial({ color: 0xfeca57 });
-    this.flame = new THREE.Mesh(flameGeo, flameMat);
+    // 尾焰（共享 Geometry/Material，clone Material 用于颜色变化）
+    this.flame = new THREE.Mesh(_sharedFlameGeo, _sharedFlameMat.clone());
     this.flame.rotation.x = -Math.PI / 2;
     this.flame.position.z = 0.35;
     this.mesh.add(this.flame);
@@ -47,23 +59,19 @@ export class Missile {
 
     this.lifetime += deltaTime;
 
-    // 跟踪目标
+    // 跟踪目标（复用临时向量）
     if (this.target && this.target.isAlive) {
-      const toTarget = new THREE.Vector3()
-        .subVectors(this.target.mesh.position, this.mesh.position)
-        .normalize();
-
-      // 平滑转向
-      this.direction.lerp(toTarget, this.turnRate * deltaTime);
+      _tmpToTarget.subVectors(this.target.mesh.position, this.mesh.position).normalize();
+      this.direction.lerp(_tmpToTarget, this.turnRate * deltaTime);
       this.direction.normalize();
     }
 
     // 移动
     this.mesh.position.addScaledVector(this.direction, this.speed * deltaTime);
 
-    // 朝向运动方向
-    const lookTarget = this.mesh.position.clone().add(this.direction);
-    this.mesh.lookAt(lookTarget);
+    // 朝向运动方向（复用临时向量）
+    _tmpLookAt.copy(this.mesh.position).add(this.direction);
+    this.mesh.lookAt(_tmpLookAt);
 
     // 尾焰闪烁
     this.flame.material.color.setHex(
@@ -71,8 +79,8 @@ export class Missile {
     );
     this.flame.scale.y = 0.8 + Math.random() * 0.4;
 
-    // 烟迹效果（降低频率优化性能）
-    if (this.trailParticles.length < 8 && Math.floor(this.lifetime * 7) !== Math.floor((this.lifetime - deltaTime) * 7)) {
+    // 烟迹效果（降低频率优化性能 + 限制数量）
+    if (this.trailParticles.length < 6 && Math.floor(this.lifetime * 5) !== Math.floor((this.lifetime - deltaTime) * 5)) {
       this.addTrailParticle(game);
     }
 
@@ -114,14 +122,10 @@ export class Missile {
     }
   }
 
+  // 烟迹粒子 — 使用共享 Geometry，clone Material（需独立 opacity）
   addTrailParticle(game) {
-    const geo = new THREE.SphereGeometry(0.08, 4, 3);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xaaaaaa,
-      transparent: true,
-      opacity: 0.4
-    });
-    const mesh = new THREE.Mesh(geo, mat);
+    const mat = _sharedTrailMat.clone();
+    const mesh = new THREE.Mesh(_sharedTrailGeo, mat);
     mesh.position.copy(this.mesh.position);
     game.sceneManager.scene.add(mesh);
     this.trailParticles.push({ mesh, life: 0.3, maxLife: 0.3 });

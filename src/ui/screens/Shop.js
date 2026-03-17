@@ -19,7 +19,8 @@ export class Shop {
     const coins = save.coins || 0;
     const upgrades = save.upgrades || {};
 
-    let html = `<h2>🛒 升级商店</h2>
+    let html = `<button class="game-btn secondary back-btn-top" id="btn-shop-back">← 返回</button>
+      <h2>🛒 升级商店</h2>
       <div class="shop-coins">💰 ${coins} 金币</div>
       <div class="shop-grid">`;
 
@@ -51,8 +52,7 @@ export class Shop {
       </div>`;
     }
 
-    html += `</div>
-      <button class="game-btn secondary" id="btn-shop-back" style="margin-top:24px">← 返回</button>`;
+    html += `</div>`;
 
     this.el.innerHTML = html;
 

@@ -1,10 +1,27 @@
 // ============================
-// 凝固汽油弹 — 大面积持续燃烧区域伤害
+// 凝固汽油弹 — 大面积持续燃烧区域伤害（性能优化：共享资源 + 降低粒子频率）
 // ============================
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { createMaterial } from '../shaders/MaterialFactory.js';
 import { PHYSICS, WEAPON_CONFIG, COLORS } from '../utils/constants.js';
+
+// 模块级共享资源 — 火焰粒子复用
+const _sharedFlameGeo = new THREE.SphereGeometry(0.3, 4, 3);
+const _sharedFlameMatTemplate1 = new THREE.MeshBasicMaterial({
+  color: COLORS.explosion,
+  transparent: true,
+  opacity: 0.7,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const _sharedFlameMatTemplate2 = new THREE.MeshBasicMaterial({
+  color: COLORS.napalmFlame,
+  transparent: true,
+  opacity: 0.7,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
 
 export class Napalm {
   constructor(game, position) {
@@ -179,27 +196,21 @@ export class Napalm {
     }
   }
 
-  // 更新火焰粒子
+  // 更新火焰粒子（降低生成频率 + 共享 Geometry）
   updateFlames(game, deltaTime) {
-    // 生成新火焰粒子
-    if (Math.random() < 0.3 && this.burnTimer < this.burnDuration * 0.8) {
-      const geo = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 4, 3);
-      const color = Math.random() > 0.5 ? COLORS.explosion : COLORS.napalmFlame;
-      const mat = new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const particle = new THREE.Mesh(geo, mat);
+    // 降低生成频率：15% 概率（原 30%）+ 限制最大粒子数
+    if (this.flameParticles.length < 8 && Math.random() < 0.15 && this.burnTimer < this.burnDuration * 0.8) {
+      const mat = (Math.random() > 0.5 ? _sharedFlameMatTemplate1 : _sharedFlameMatTemplate2).clone();
+      const particle = new THREE.Mesh(_sharedFlameGeo, mat);
       const angle = Math.random() * Math.PI * 2;
       const r = Math.random() * this.burnRadius * 0.8;
+      const scale = 0.6 + Math.random();
       particle.position.set(
         this.burnPosition.x + Math.cos(angle) * r,
         0.3 + Math.random() * 0.5,
         this.burnPosition.z + Math.sin(angle) * r
       );
+      particle.scale.setScalar(scale);
       game.sceneManager.scene.add(particle);
       this.flameParticles.push({
         mesh: particle,
