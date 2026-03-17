@@ -49,41 +49,32 @@ export class Boss {
 
   // 查找模型中的关键部件引用
   findModelParts() {
-    // 先检查 userData（直接创建的模型会有）
-    if (this.mesh.userData.tower) {
-      this.tower = this.mesh.userData.tower;
-    }
-    if (this.mesh.userData.glowOrb) {
-      this.glowOrb = this.mesh.userData.glowOrb;
-    }
-    if (this.mesh.userData.bossLight) {
-      this.bossLight = this.mesh.userData.bossLight;
-    }
-    if (this.mesh.userData.antenna) {
-      this.antenna = this.mesh.userData.antenna;
-    }
-
-    // clone 后 userData 引用丢失，需要按名称/类型查找
-    if (!this.tower || !this.glowOrb || !this.bossLight) {
-      this.mesh.traverse((child) => {
-        // 查找塔（CylinderGeometry，红色涂装，y > 4）
-        if (!this.tower && child.isMesh && child.geometry.type === 'CylinderGeometry') {
-          if (child.material.color && child.material.color.getHex() === 0xe74c3c) {
-            this.tower = child;
-          }
+    // clone() 后 userData 引用仍指向原始模型的子对象，不能直接使用
+    // 始终通过 traverse 在当前 mesh 树中查找部件
+    this.mesh.traverse((child) => {
+      // 查找塔（CylinderGeometry，红色涂装）
+      if (!this.tower && child.isMesh && child.geometry && child.geometry.type === 'CylinderGeometry') {
+        if (child.material && child.material.color && child.material.color.getHex() === 0xe74c3c) {
+          this.tower = child;
         }
-        // 查找发光球（AdditiveBlending 的球体）
-        if (!this.glowOrb && child.isMesh && child.geometry.type === 'SphereGeometry') {
-          if (child.material.blending === THREE.AdditiveBlending) {
-            this.glowOrb = child;
-          }
+      }
+      // 查找发光球（AdditiveBlending 的球体）
+      if (!this.glowOrb && child.isMesh && child.geometry && child.geometry.type === 'SphereGeometry') {
+        if (child.material && child.material.blending === THREE.AdditiveBlending) {
+          this.glowOrb = child;
         }
-        // 查找点光源
-        if (!this.bossLight && child.isPointLight) {
-          this.bossLight = child;
+      }
+      // 查找点光源
+      if (!this.bossLight && child.isPointLight) {
+        this.bossLight = child;
+      }
+      // 查找天线
+      if (!this.antenna && child.isMesh && child.geometry && child.geometry.type === 'CylinderGeometry') {
+        if (child.material && child.material.transparent && child.material.opacity === 0.9) {
+          this.antenna = child;
         }
-      });
-    }
+      }
+    });
 
     // 兜底：创建缺失的部件
     if (!this.tower) {
@@ -139,7 +130,7 @@ export class Boss {
 
     // 天线发光脉冲
     const pulse = Math.sin(performance.now() * 0.005) * 0.5 + 0.5;
-    if (this.glowOrb) {
+    if (this.glowOrb && this.glowOrb.material) {
       this.glowOrb.material.opacity = 0.5 + pulse * 0.5;
     }
     if (this.bossLight) {
@@ -149,13 +140,13 @@ export class Boss {
     // 受伤闪烁
     if (this.flashTimer > 0) {
       this.flashTimer -= deltaTime;
-      if (this.tower && this.tower.material.emissive) {
+      if (this.tower && this.tower.material && this.tower.material.emissive) {
         this.tower.material.emissive.setHex(
           Math.sin(this.flashTimer * 30) > 0 ? 0xff0000 : 0x000000
         );
       }
     } else {
-      if (this.tower && this.tower.material.emissive) {
+      if (this.tower && this.tower.material && this.tower.material.emissive) {
         this.tower.material.emissive.setHex(0x000000);
       }
     }
@@ -237,7 +228,7 @@ export class Boss {
       });
     }
 
-    game.audioManager.playSynth('gun_fire');
+    game.audioManager.play('gun_fire');
   }
 
   // 发射追踪导弹
@@ -291,7 +282,7 @@ export class Boss {
       }
     });
 
-    game.audioManager.playSynth('bomb_drop');
+    game.audioManager.play('bomb_drop');
   }
 
   // 阶段切换视觉反馈

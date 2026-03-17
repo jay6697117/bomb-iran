@@ -389,12 +389,13 @@ export class LevelManager {
     return idx >= 0 && idx < ids.length - 1 ? ids[idx + 1] : null;
   }
 
-  // 是否解锁
+  // 是否解锁（临时解锁所有关卡，调试用）
   static isLevelUnlocked(levelId) {
+    // return true; // 临时：解锁所有关卡
+    // --- 原逻辑（恢复时取消注释下面的代码，删掉上面的 return true）---
     const ids = Object.keys(LEVEL_DATA);
     const idx = ids.indexOf(levelId);
     if (idx === 0) return true;
-
     const prevId = ids[idx - 1];
     const save = LevelManager.loadSave();
     return save.levels && save.levels[prevId];
