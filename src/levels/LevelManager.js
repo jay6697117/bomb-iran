@@ -258,6 +258,12 @@ export class LevelManager {
 
     this.saveProgress(result);
 
+    // 检查成就
+    if (game.achievementManager) {
+      const save = LevelManager.loadSave();
+      game.achievementManager.checkAchievements(result, save);
+    }
+
     if (game.uiManager) {
       game.uiManager.showResult(result);
     }

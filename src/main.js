@@ -17,6 +17,8 @@ import { Cutscene } from './ui/screens/Cutscene.js';
 import { Shop } from './ui/screens/Shop.js';
 import { Achievements } from './ui/screens/Achievements.js';
 import { HUD } from './ui/components/HUD.js';
+import { AchievementManager } from './systems/AchievementManager.js';
+import { AchievementNotify } from './ui/components/AchievementNotify.js';
 
 // =============================
 // 初始化
@@ -149,6 +151,11 @@ uiManager.registerScreen('shop', shop);
 // 成就
 const achievements = new Achievements(game, uiManager);
 uiManager.registerScreen('achievements', achievements);
+
+// 成就系统（管理器 + 通知组件）
+const achievementNotify = new AchievementNotify();
+const achievementManager = new AchievementManager(game, achievementNotify);
+game.achievementManager = achievementManager;
 
 // =============================
 // 重覆商店和成就的 showScreen 来触发渲染
