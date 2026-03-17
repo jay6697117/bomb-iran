@@ -173,7 +173,7 @@ export class Boss {
     // 阶段 2+：发射导弹
     if (this.phase >= 2) {
       this.missileTimer += deltaTime;
-      const missileRate = this.phase === 3 ? 3 : 5;
+      const missileRate = this.phase === 3 ? 4.5 : 7; // 发射间隔（已削弱）
       if (this.missileTimer >= missileRate && dist < 45) {
         this.missileTimer = 0;
         this.fireMissile(game, playerPos);
@@ -254,12 +254,12 @@ export class Boss {
     missile.add(trail);
     trail.position.y = -0.6;
 
-    const speed = 15;
+    const speed = 10; // Boss 导弹速度（已削弱）
     game.addEntity({
       type: 'boss_missile',
       mesh: missile,
       lifetime: 0,
-      maxLifetime: 5,
+      maxLifetime: 3.5, // 存活时间（已缩短）
       damage: 1,
       update(game, dt) {
         this.lifetime += dt;

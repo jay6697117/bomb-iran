@@ -22,11 +22,11 @@ const _tmpLookAt = new THREE.Vector3();
 
 export class Missile {
   constructor(game, position, target) {
-    this.speed = 16;      // 速度增强
-    this.turnRate = 4;    // 追踪能力增强
+    this.speed = 12;      // 速度（已削弱）
+    this.turnRate = 2.5;  // 追踪能力（已削弱）
     this.damage = 1;
     this.lifetime = 0;
-    this.maxLifetime = 6;
+    this.maxLifetime = 4.5; // 存活时间（已缩短）
     this.isActive = true;
     this.target = target;
 

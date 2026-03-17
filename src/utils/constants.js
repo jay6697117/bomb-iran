@@ -120,13 +120,13 @@ export const ENEMY_CONFIG = {
   },
   sam: {
     hp: 15,
-    fireRate: 5,          // 发射间隔秒（更快）
-    range: 50,            // 射程提升
-    missileSpeed: 22,     // 导弹速度大幅提升
-    missileTurnRate: 4.5, // 追踪能力更强
-    missileLifetime: 10,  // 追踪持续更久
-    salvoCount: 3,        // 一波齐射几发
-    reloadTime: 8,        // 装填更快
+    fireRate: 7,          // 发射间隔秒（已削弱）
+    range: 40,            // 射程（已缩短）
+    missileSpeed: 15,     // 导弹速度（已削弱）
+    missileTurnRate: 3,   // 追踪能力（已削弱）
+    missileLifetime: 6,   // 追踪持续（已缩短）
+    salvoCount: 2,        // 一波齐射几发（已减少）
+    reloadTime: 10,       // 装填时间（已延长）
     scoreValue: 500
   }
 };
