@@ -78,7 +78,8 @@ export const LEVEL_DATA = {
     fighterWaves: [],
     supplyDropInterval: 30,
     playerStartFuel: 100,
-    par: 120
+    par: 120,
+    boss: { x: 0, z: -35, hp: 40 }
   },
 
   // === 第二章：城市突袭 ===
@@ -174,7 +175,8 @@ export const LEVEL_DATA = {
     fighterWaves: [],
     supplyDropInterval: 25,
     playerStartFuel: 100,
-    par: 150
+    par: 150,
+    boss: { x: 0, z: -40, hp: 60 }
   },
 
   // === 第三章：海岸突击 ===
@@ -284,7 +286,8 @@ export const LEVEL_DATA = {
     ],
     supplyDropInterval: 18,
     playerStartFuel: 100,
-    par: 180
+    par: 180,
+    boss: { x: 0, z: -42, hp: 80 }
   },
 
   // === 第四章：山地要塞 ===

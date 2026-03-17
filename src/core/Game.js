@@ -92,6 +92,13 @@ export class Game {
     this.audioManager.registerSynth('radar_ping', {
       frequency: 1000, duration: 0.1, type: 'sine', volume: 0.2
     });
+    // 关卡结算音效
+    this.audioManager.registerSynth('level_complete', {
+      frequency: 400, frequencyEnd: 1200, duration: 0.6, type: 'sine', volume: 0.5
+    });
+    this.audioManager.registerSynth('level_fail', {
+      frequency: 400, frequencyEnd: 80, duration: 0.8, type: 'sawtooth', volume: 0.4
+    });
   }
 
   // 切换游戏状态
@@ -149,8 +156,8 @@ export class Game {
     const deltaTime = (time - this.lastTime) / 1000;
     this.lastTime = time;
 
-    // 避免首帧或过大的 deltaTime
-    if (deltaTime > 0.1 || deltaTime <= 0) return;
+    // 避免首帧或过大的 deltaTime（限制最大帧时间避免物理跳跃）
+    if (deltaTime > 0.05 || deltaTime <= 0) return;
 
     // 根据状态更新
     if (this.state === GAME_STATES.PLAYING && !this.isPaused) {
@@ -215,17 +222,19 @@ export class Game {
     }
   }
 
-  // 处理实体移除
+  // 处理实体移除（优化版，避免 O(n²) 的 splice）
   processRemovals() {
+    if (this.entitiesToRemove.length === 0) return;
+
+    const removeSet = new Set(this.entitiesToRemove);
+    // 先调用 destroy
     for (const entity of this.entitiesToRemove) {
-      const idx = this.entities.indexOf(entity);
-      if (idx !== -1) {
-        this.entities.splice(idx, 1);
-      }
       if (entity.destroy) {
         entity.destroy(this);
       }
     }
+    // 一次性过滤
+    this.entities = this.entities.filter(e => !removeSet.has(e));
     this.entitiesToRemove = [];
   }
 

@@ -50,8 +50,8 @@ export class Explosion {
     this.sphere.position.copy(position);
     game.sceneManager.scene.add(this.sphere);
 
-    // 碎片粒子
-    const particleCount = isMega ? 30 : 15;
+    // 碎片粒子（优化数量）
+    const particleCount = isMega ? 15 : 8;
     for (let i = 0; i < particleCount; i++) {
       const size = randomRange(0.1, 0.3);
       const geo = new THREE.BoxGeometry(size, size, size);
@@ -75,8 +75,8 @@ export class Explosion {
       this.particles.push(particle);
     }
 
-    // 烟雾粒子
-    for (let i = 0; i < 8; i++) {
+    // 烟雾粒子（优化数量）
+    for (let i = 0; i < 4; i++) {
       const size = randomRange(0.3, 0.8);
       const geo = new THREE.SphereGeometry(size, 6, 4);
       const mat = new THREE.MeshBasicMaterial({

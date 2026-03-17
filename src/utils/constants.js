@@ -71,7 +71,7 @@ export const WEAPON_CONFIG = {
 // 燃料配置
 export const FUEL_CONFIG = {
   maxFuel: 100,
-  consumeRate: 2,         // 每秒消耗
+  consumeRate: 0.5,       // 每秒消耗（4倍飞行时间）
   boostMultiplier: 2.5,   // 加速时消耗倍率
   lowFuelThreshold: 20,   // 低燃料警告阈值（百分比）
   criticalFuelThreshold: 10, // 危险燃料阈值
@@ -120,13 +120,13 @@ export const ENEMY_CONFIG = {
   },
   sam: {
     hp: 15,
-    fireRate: 6,          // 发射间隔秒
-    range: 45,
-    missileSpeed: 14,
-    missileTurnRate: 3,
-    missileLifetime: 8,
+    fireRate: 5,          // 发射间隔秒（更快）
+    range: 50,            // 射程提升
+    missileSpeed: 22,     // 导弹速度大幅提升
+    missileTurnRate: 4.5, // 追踪能力更强
+    missileLifetime: 10,  // 追踪持续更久
     salvoCount: 3,        // 一波齐射几发
-    reloadTime: 10,       // 齐射后装填时间
+    reloadTime: 8,        // 装填更快
     scoreValue: 500
   }
 };

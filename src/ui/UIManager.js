@@ -28,6 +28,13 @@ export class UIManager {
 
   // 显示结算画面
   showResult(result) {
+    // 播放对应音效
+    if (result.grade === 'F') {
+      this.game.audioManager.play('level_fail');
+    } else {
+      this.game.audioManager.play('level_complete');
+    }
+
     if (this.screens.result) {
       this.screens.result.show(result);
     }

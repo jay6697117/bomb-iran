@@ -56,28 +56,26 @@ export class EnemyFighter {
     // 从 AssetLoader 获取预加载的 GLTF 模型
     const group = game.assetLoader.getModel('enemy_fighter');
 
-    // 获取引擎引用用于火焰动画
-    this.engine = group.userData.engine || null;
-    this.engine2 = group.userData.engine2 || null;
+    // clone 后 userData 引用指向原始对象，需要重新查找
+    this.engine = null;
+    this.engine2 = null;
 
-    // clone 后 userData 引用可能丢失，手动查找
-    if (!this.engine) {
-      const cones = [];
-      group.traverse((child) => {
-        if (child.isMesh && child.geometry.type === 'ConeGeometry') {
-          cones.push(child);
-        }
-      });
-      // 最后两个 ConeGeometry 通常是引擎火焰
-      if (cones.length >= 2) {
-        this.engine = cones[cones.length - 2];
-        this.engine2 = cones[cones.length - 1];
-      } else if (cones.length === 1) {
-        this.engine = cones[0];
+    // 尝试查找 ConeGeometry 作为引擎火焰
+    const cones = [];
+    group.traverse((child) => {
+      if (child.isMesh && child.geometry && child.geometry.type === 'ConeGeometry') {
+        cones.push(child);
       }
+    });
+
+    if (cones.length >= 2) {
+      this.engine = cones[cones.length - 2];
+      this.engine2 = cones[cones.length - 1];
+    } else if (cones.length === 1) {
+      this.engine = cones[0];
     }
 
-    // 兜底
+    // 兜底：无论如何都保证 engine 存在且有可操作的 material
     if (!this.engine) {
       const engineGeo = new THREE.ConeGeometry(0.08, 0.35, 5);
       const engineMat = new THREE.MeshBasicMaterial({ color: 0xff6b35 });
@@ -87,7 +85,20 @@ export class EnemyFighter {
       group.add(this.engine);
     }
 
+    // 确保 engine 的 material 有 color 属性（GLTF 材质可能不兼容）
+    this._ensureEngineMaterial(this.engine);
+    if (this.engine2) {
+      this._ensureEngineMaterial(this.engine2);
+    }
+
     return group;
+  }
+
+  // 确保引擎 mesh 的 material 具有可操作的 color 属性
+  _ensureEngineMaterial(engineMesh) {
+    if (!engineMesh || !engineMesh.material || !engineMesh.material.color) {
+      engineMesh.material = new THREE.MeshBasicMaterial({ color: 0xff6b35 });
+    }
   }
 
   update(game, deltaTime) {
@@ -170,11 +181,13 @@ export class EnemyFighter {
     // 简单的 roll 效果
     this.mesh.rotation.z = cross.dot(this.direction) * 0.3;
 
-    // 引擎喷口闪烁
-    this.engine.material.color.setHex(
-      Math.random() > 0.5 ? 0xff6b35 : 0xff4500
-    );
-    this.engine.scale.y = 0.8 + Math.random() * 0.4;
+    // 引擎喷口闪烁（安全检查）
+    if (this.engine && this.engine.material && this.engine.material.color) {
+      this.engine.material.color.setHex(
+        Math.random() > 0.5 ? 0xff6b35 : 0xff4500
+      );
+      this.engine.scale.y = 0.8 + Math.random() * 0.4;
+    }
   }
 
   changeState(newState) {

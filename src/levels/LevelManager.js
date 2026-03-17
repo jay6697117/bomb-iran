@@ -23,7 +23,7 @@ export class LevelManager {
     this.elapsedTime = 0;
     this.isComplete = false;
     this.missileTimer = 0;
-    this.missileInterval = 8;
+    this.missileInterval = 5;  // 导弹发射更频繁
     this.boss = null;
 
     // 硬核系统
@@ -271,11 +271,25 @@ export class LevelManager {
     this.isComplete = true;
     console.log('💀 关卡失败！');
 
+    // 计算真实的摧毁率
+    const stats = game.player ? game.player.stats : {};
+    const data = this.currentLevelData;
+    const totalTargets = (data.buildings?.length || 0)
+      + (data.antiAirs?.length || 0)
+      + (data.samSites?.length || 0)
+      + (data.radars?.length || 0);
+    const destroyed = stats.targetsDestroyed || 0;
+    const destroyRate = totalTargets > 0 ? Math.round((destroyed / totalTargets) * 100) : 0;
+
     if (game.uiManager) {
       game.uiManager.showResult({
         levelId: this.currentLevelId,
+        levelName: data.name,
         grade: 'F', score: 0, coins: 0,
-        destroyRate: 0, timeUsed: this.elapsedTime, survived: false
+        destroyRate,
+        timeUsed: Math.round(this.elapsedTime),
+        survived: false,
+        isFail: true
       });
     }
   }

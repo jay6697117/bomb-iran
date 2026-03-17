@@ -86,9 +86,27 @@ export class Player {
     this.mesh.position.set(0, this.altitude, 0);
     game.sceneManager.scene.add(this.mesh);
 
-    // 飞机倾斜动画参数
-    this.targetTilt = 0;
-    this.currentTilt = 0;
+    // === 飞行物理模型参数 ===
+    // 速度向量（世界坐标系）
+    this.velocity = { x: 0, z: 0 };
+    // 飞行朝向角（弧度，0 = 朝 -Z，即屏幕上方）
+    this.heading = 0;
+    // 当前前进速度标量
+    this.currentThrust = 0;
+    // 飞行姿态参数（平滑过渡用）
+    this.rollAngle = 0;    // 当前 roll
+    this.pitchAngle = 0;   // 当前 pitch
+    this.yawAngle = 0;     // 当前 yaw（模型偏航展示用）
+    this.flyTimer = 0;     // 飞行计时器（自然浮动）
+    // 飞行物理常量
+    this.thrustAccel = 18;    // 推力加速度
+    this.dragFactor = 3.0;    // 空气阻力系数
+    this.turnRate = 2.8;      // 转向速率（弧度/秒）
+    this.maxRoll = 0.7;       // 最大 roll 倾斜（弧度）
+    this.maxPitch = 0.3;      // 最大 pitch 俯仰（弧度）
+    this.rollSmooth = 5;      // roll 平滑速度
+    this.pitchSmooth = 4;     // pitch 平滑速度
+    this.headingSmooth = 4;   // 朝向平滑速度
 
     // 推进器火焰效果
     this.thrusterFlicker = 0;
@@ -143,7 +161,7 @@ export class Player {
     // === 移动 ===
     const movement = input.getMovement();
     const isBoosting = this.speedBoostTimer > 0;
-    const currentSpeed = isBoosting ? this.speed * 1.5 : this.speed;
+    const maxSpeed = isBoosting ? this.speed * 1.5 : this.speed;
 
     // 如果燃料耗尽，飞机逐渐下坠
     if (this.isFuelEmpty) {
@@ -154,31 +172,107 @@ export class Player {
       }
     }
 
-    this.mesh.position.x += movement.x * currentSpeed * deltaTime;
-    this.mesh.position.z += movement.z * currentSpeed * deltaTime;
+    // === 真实飞行物理 ===
+    const hasInput = movement.x !== 0 || movement.z !== 0;
 
-    // 限制移动范围
-    this.mesh.position.x = clamp(this.mesh.position.x, -45, 45);
-    this.mesh.position.z = clamp(this.mesh.position.z, -45, 45);
+    if (hasInput) {
+      // 计算输入方向的目标朝向角
+      const targetHeading = Math.atan2(-movement.x, -movement.z);
 
-    // 飞机倾斜动画
-    this.targetTilt = -movement.x * 0.4;
-    this.currentTilt += (this.targetTilt - this.currentTilt) * 5 * deltaTime;
-    this.mesh.rotation.z = this.currentTilt;
+      // 计算朝向差值（取最短路径）
+      let headingDiff = targetHeading - this.heading;
+      while (headingDiff > Math.PI) headingDiff -= Math.PI * 2;
+      while (headingDiff < -Math.PI) headingDiff += Math.PI * 2;
 
-    // 飞机俯仰
-    const pitchTarget = -movement.z * 0.15;
-    this.mesh.rotation.x += (pitchTarget - this.mesh.rotation.x) * 3 * deltaTime;
+      // 平滑转向 — 飞机逐渐转向目标方向
+      this.heading += headingDiff * this.headingSmooth * deltaTime;
 
-    // 推进器火焰闪烁（无燃料时火焰熄灭）
+      // 推力加速 — 模拟引擎推力
+      this.currentThrust += this.thrustAccel * deltaTime;
+      this.currentThrust = Math.min(this.currentThrust, maxSpeed);
+
+      // 将推力转化为速度向量（沿飞机朝向）
+      this.velocity.x = -Math.sin(this.heading) * this.currentThrust;
+      this.velocity.z = -Math.cos(this.heading) * this.currentThrust;
+
+      // === 飞行姿态 ===
+      // Roll（bank turn）— 转弯时的倾斜，倾斜量与转向差成正比
+      const targetRoll = clamp(-headingDiff * 2.5, -this.maxRoll, this.maxRoll);
+      this.rollAngle += (targetRoll - this.rollAngle) * this.rollSmooth * deltaTime;
+
+      // Pitch — 加速时抬头，减速时低头
+      const speedRatio = this.currentThrust / maxSpeed;
+      const targetPitch = -speedRatio * this.maxPitch * 0.6;
+      this.pitchAngle += (targetPitch - this.pitchAngle) * this.pitchSmooth * deltaTime;
+
+    } else {
+      // 无输入时 — 空气阻力减速（指数衰减）
+      this.currentThrust *= (1 - this.dragFactor * deltaTime);
+      this.velocity.x *= (1 - this.dragFactor * deltaTime);
+      this.velocity.z *= (1 - this.dragFactor * deltaTime);
+
+      // 接近零时完全停止（避免无限滑行）
+      if (Math.abs(this.currentThrust) < 0.1) {
+        this.currentThrust = 0;
+        this.velocity.x = 0;
+        this.velocity.z = 0;
+      }
+
+      // 姿态回正
+      this.rollAngle += (0 - this.rollAngle) * this.rollSmooth * deltaTime;
+      this.pitchAngle += (0 - this.pitchAngle) * this.pitchSmooth * deltaTime;
+    }
+
+    // 应用速度到位置
+    this.mesh.position.x += this.velocity.x * deltaTime;
+    this.mesh.position.z += this.velocity.z * deltaTime;
+
+    // 限制移动范围（触边时反弹减速）
+    if (this.mesh.position.x < -45 || this.mesh.position.x > 45) {
+      this.mesh.position.x = clamp(this.mesh.position.x, -45, 45);
+      this.velocity.x *= -0.3;
+      this.currentThrust *= 0.5;
+    }
+    if (this.mesh.position.z < -45 || this.mesh.position.z > 45) {
+      this.mesh.position.z = clamp(this.mesh.position.z, -45, 45);
+      this.velocity.z *= -0.3;
+      this.currentThrust *= 0.5;
+    }
+
+    // 飞行计时（用于自然浮动）
+    this.flyTimer += deltaTime;
+
+    // === 应用飞机姿态到模型 ===
+    // 主朝向（yaw）
+    this.mesh.rotation.y = this.heading;
+    // 侧倾（roll）
+    this.mesh.rotation.z = this.rollAngle;
+    // 俯仰（pitch）+ 自然浮动
+    const floatPitch = Math.sin(this.flyTimer * 1.5) * 0.02;
+    this.mesh.rotation.x = this.pitchAngle + floatPitch;
+
+    // 自然高度浮动
+    if (!this.isFuelEmpty) {
+      const floatY = Math.sin(this.flyTimer * 1.2) * 0.08
+                   + Math.sin(this.flyTimer * 2.7) * 0.03;
+      this.mesh.position.y = this.altitude + floatY;
+    }
+
+    // 推进器火焰 — 根据推力大小动态调整
     if (this.thruster && this.thruster.scale) {
       if (!this.isFuelEmpty) {
         this.thrusterFlicker += deltaTime * 15;
-        const flickerScale = 0.8 + Math.sin(this.thrusterFlicker) * 0.3;
+        const speedRatio = this.currentThrust / maxSpeed;
+        // 火焰大小随推力变化
+        const baseScale = 0.3 + speedRatio * 0.8;
+        const flickerScale = baseScale + Math.sin(this.thrusterFlicker) * 0.2;
         this.thruster.scale.y = flickerScale;
+        this.thruster.scale.x = 0.8 + speedRatio * 0.4;
+        this.thruster.scale.z = 0.8 + speedRatio * 0.4;
         if (this.thruster.material && this.thruster.material.color) {
+          // 低速时橙色，高速时偏黄白
           this.thruster.material.color.setHex(
-            Math.random() > 0.5 ? 0xff6b35 : 0xffd93d
+            speedRatio > 0.7 ? 0xffd93d : 0xff6b35
           );
         }
         this.thruster.visible = true;
@@ -470,6 +564,15 @@ export class Player {
     this.mesh.visible = true;
     this.mesh.position.set(0, this.altitude, 0);
     this.mesh.rotation.set(0, 0, 0);
+
+    // 重置飞行物理参数
+    this.velocity = { x: 0, z: 0 };
+    this.heading = 0;
+    this.currentThrust = 0;
+    this.rollAngle = 0;
+    this.pitchAngle = 0;
+    this.yawAngle = 0;
+    this.flyTimer = 0;
 
     // 重置燃料
     this.fuel = this.maxFuel;

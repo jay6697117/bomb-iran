@@ -7,8 +7,8 @@ import { COLORS } from '../utils/constants.js';
 
 export class Missile {
   constructor(game, position, target) {
-    this.speed = 10;
-    this.turnRate = 2.5; // 转向速率
+    this.speed = 16;      // 速度增强
+    this.turnRate = 4;    // 追踪能力增强
     this.damage = 1;
     this.lifetime = 0;
     this.maxLifetime = 6;
@@ -71,8 +71,8 @@ export class Missile {
     );
     this.flame.scale.y = 0.8 + Math.random() * 0.4;
 
-    // 烟迹效果
-    if (Math.floor(this.lifetime * 20) % 2 === 0) {
+    // 烟迹效果（降低频率优化性能）
+    if (this.trailParticles.length < 8 && Math.floor(this.lifetime * 7) !== Math.floor((this.lifetime - deltaTime) * 7)) {
       this.addTrailParticle(game);
     }
 
@@ -124,7 +124,7 @@ export class Missile {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(this.mesh.position);
     game.sceneManager.scene.add(mesh);
-    this.trailParticles.push({ mesh, life: 0.5, maxLife: 0.5 });
+    this.trailParticles.push({ mesh, life: 0.3, maxLife: 0.3 });
   }
 
   detonate(game) {

@@ -14,24 +14,28 @@ const TERRAIN_THEMES = {
     groundColor: COLORS.desert,
     skyColor: 0xE8D5B7,
     fogColor: 0xE8D5B7,
+    edgeColor: 0xC4A882,   // 沙漠边缘：暖沙色，与沙漠地面自然过渡
     decorations: ['cactus', 'rock', 'dune', 'bush']
   },
   city: {
     groundColor: COLORS.city,
     skyColor: 0x87CEEB,
     fogColor: 0x87CEEB,
+    edgeColor: 0x5B8BA0,   // 城市边缘：天蓝灰色
     decorations: ['road', 'tree', 'lamppost', 'bush']
   },
   coast: {
     groundColor: COLORS.coast,
     skyColor: 0x87CEEB,
     fogColor: 0xB0E0E6,
+    edgeColor: 0x2980B9,   // 海岸边缘：海蓝色，模拟海洋
     decorations: ['palm', 'rock', 'water', 'grass']
   },
   mountain: {
     groundColor: COLORS.mountain,
     skyColor: 0x9BB5D0,
     fogColor: 0xC0C8D0,
+    edgeColor: 0x6B8BA4,   // 山地边缘：蓝灰色，模拟远山雾气
     decorations: ['pine', 'rock', 'snow', 'grass']
   }
 };
@@ -61,6 +65,21 @@ export class Terrain {
     ground.receiveShadow = true;
     game.sceneManager.scene.add(ground);
     this.meshes.push(ground);
+
+    // 边界外延伸平面 — 超大面积覆盖地形边界外的区域，避免白色露底
+    const edgeSize = size * 8; // 足够大，覆盖视野范围
+    const edgeGeo = new THREE.PlaneGeometry(edgeSize, edgeSize);
+    const edgeMat = new THREE.MeshStandardMaterial({
+      color: config.edgeColor,
+      roughness: 1.0,
+      metalness: 0.0,
+    });
+    const edgePlane = new THREE.Mesh(edgeGeo, edgeMat);
+    edgePlane.rotation.x = -Math.PI / 2;
+    edgePlane.position.y = -0.05; // 略低于主地面，避免 z-fighting
+    edgePlane.receiveShadow = true;
+    game.sceneManager.scene.add(edgePlane);
+    this.meshes.push(edgePlane);
 
     // 地形起伏（顶点偏移）
     if (theme === 'mountain' || theme === 'desert') {

@@ -45,7 +45,7 @@ export class AssetLoader {
         // 针对 Jet.glb：用 wrapper 隔离基础旋转，避免被 Player.update() 覆盖
         if (name === 'player') {
           const wrapper = new THREE.Group();
-          model.scale.set(0.5, 0.5, 0.5);
+          model.scale.set(0.3, 0.3, 0.3);
           model.rotation.y = Math.PI; // 机头朝屏幕上方（-Z），机尾朝向玩家
           wrapper.add(model);
           this.models.set(name, wrapper);
