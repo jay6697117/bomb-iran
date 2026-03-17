@@ -25,6 +25,22 @@ export class Cutscene {
             ${levelData.objectives.map(o => `<li>${o.desc}</li>`).join('')}
           </ul>
         </div>
+        <div class="mission-controls">
+          <h4>操作指南：</h4>
+          <div class="controls-grid">
+            <div class="control-group">
+              <div class="control-group-title">🛩️ 飞行控制</div>
+              <div class="control-row"><span class="control-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span class="control-desc">方向移动</span></div>
+              <div class="control-row"><span class="control-keys"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></span><span class="control-desc">方向移动</span></div>
+            </div>
+            <div class="control-group">
+              <div class="control-group-title">🔥 战斗操作</div>
+              <div class="control-row"><span class="control-keys"><kbd>Space</kbd></span><span class="control-desc">开火 / 投弹</span></div>
+              <div class="control-row"><span class="control-keys"><kbd>Q</kbd> / <kbd>E</kbd></span><span class="control-desc">切换武器</span></div>
+              <div class="control-row"><span class="control-keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></span><span class="control-desc">💣 炸弹 · 🔫 机枪 · 🚀 导弹 · 🔥 凝固弹</span></div>
+            </div>
+          </div>
+        </div>
         <div id="cutscene-countdown" style="font-size:48px;color:#feca57;font-weight:bold">${countdown}</div>
       </div>
     `;

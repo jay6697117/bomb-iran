@@ -2,7 +2,7 @@
 // 空投补给箱 — 降落伞下降、限时拾取
 // ============================
 import * as THREE from 'three';
-import { SUPPLY_CONFIG, COLORS } from '../utils/constants.js';
+import { SUPPLY_CONFIG, COLORS, PLAYER_DEFAULTS } from '../utils/constants.js';
 
 export class SupplyDrop {
   constructor(game, config = {}) {
@@ -16,6 +16,11 @@ export class SupplyDrop {
     this.fallSpeed = SUPPLY_CONFIG.fallSpeed;
     this.despawnTime = SUPPLY_CONFIG.despawnTime;
     this.floatOffset = Math.random() * Math.PI * 2;
+    // 拾取参数
+    this.pickupRadius = 6;       // 拾取检测半径
+    this.magnetRadius = 12;      // 磁吸吸附半径
+    this.magnetSpeed = 15;       // 磁吸移动速度
+    this.landingAltitude = PLAYER_DEFAULTS.altitude; // 降落高度 = 玩家飞行高度
 
     // 补给箱模型
     this.mesh = new THREE.Group();
@@ -75,17 +80,31 @@ export class SupplyDrop {
 
     this.mesh.add(this.parachute);
 
-    // 外圈光晕
-    const glowGeo = new THREE.SphereGeometry(1.2, 8, 6);
+    // 外圈光晕（增大更醒目）
+    const glowGeo = new THREE.SphereGeometry(2.0, 8, 6);
     const glowMat = new THREE.MeshBasicMaterial({
       color: crateColor,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.25,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
     this.glow = new THREE.Mesh(glowGeo, glowMat);
     this.mesh.add(this.glow);
+
+    // 指示箭头（帮助玩家定位空投）
+    this.arrow = new THREE.Group();
+    const arrowGeo = new THREE.ConeGeometry(0.4, 0.8, 4);
+    const arrowMat = new THREE.MeshBasicMaterial({
+      color: crateColor,
+      transparent: true,
+      opacity: 0.9
+    });
+    const arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+    arrowMesh.rotation.x = Math.PI; // 箭头朝下
+    this.arrow.add(arrowMesh);
+    this.arrow.position.y = 3.5;
+    this.mesh.add(this.arrow);
 
     // 初始位置（高空）
     this.mesh.position.set(x, 25, z);
@@ -96,6 +115,12 @@ export class SupplyDrop {
     if (this.isCollected) return;
 
     this.lifetime += deltaTime;
+
+    // 指示箭头上下跳动动画
+    if (this.arrow) {
+      this.arrow.position.y = 3.5 + Math.sin(this.lifetime * 4) * 0.5;
+      this.arrow.rotation.y += deltaTime * 2;
+    }
 
     if (!this.hasLanded) {
       // 下降阶段
@@ -108,9 +133,9 @@ export class SupplyDrop {
       // 箱子轻微旋转
       this.crate.rotation.y += deltaTime * 0.3;
 
-      // 着地
-      if (this.mesh.position.y <= 5) { // 着陆在飞行高度附近
-        this.mesh.position.y = 5;
+      // 着陆在玩家飞行高度
+      if (this.mesh.position.y <= this.landingAltitude) {
+        this.mesh.position.y = this.landingAltitude;
         this.hasLanded = true;
         // 降落伞消失
         this.parachute.visible = false;
@@ -119,10 +144,10 @@ export class SupplyDrop {
       // 着地后漂浮等待拾取
       this.despawnTimer += deltaTime;
       this.floatOffset += deltaTime * 2;
-      this.mesh.position.y = 5 + Math.sin(this.floatOffset) * 0.3;
+      this.mesh.position.y = this.landingAltitude + Math.sin(this.floatOffset) * 0.5;
 
-      // 光晕脉动
-      const pulse = 0.8 + Math.sin(this.floatOffset * 1.5) * 0.2;
+      // 光晕脉动（更明显）
+      const pulse = 1.0 + Math.sin(this.floatOffset * 1.5) * 0.4;
       this.glow.scale.setScalar(pulse);
 
       // 即将消失时闪烁
@@ -136,10 +161,20 @@ export class SupplyDrop {
         return;
       }
 
-      // 拾取检测
+      // 拾取检测 + 磁吸效果
       if (game.player && game.player.isAlive) {
         const dist = this.mesh.position.distanceTo(game.player.mesh.position);
-        if (dist < 2) {
+
+        // 磁吸吸附：在磁吸范围内自动向玩家飞过去
+        if (dist < this.magnetRadius && dist > this.pickupRadius * 0.3) {
+          const dir = game.player.mesh.position.clone().sub(this.mesh.position).normalize();
+          const magnetForce = this.magnetSpeed * (1 - dist / this.magnetRadius) * deltaTime;
+          this.mesh.position.x += dir.x * magnetForce;
+          this.mesh.position.z += dir.z * magnetForce;
+        }
+
+        // 拾取判定（大范围）
+        if (dist < this.pickupRadius) {
           this.collect(game);
         }
       }

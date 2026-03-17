@@ -25,16 +25,16 @@ export function createWaterSurface(options = {}) {
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeepColor: { value: new THREE.Color(0x003366) },      // 深水色
-      uShallowColor: { value: new THREE.Color(0x0099cc) },   // 浅水色
-      uFresnelColor: { value: new THREE.Color(0x88ccff) },    // 菲涅尔反射色
-      uFoamColor: { value: new THREE.Color(0xeeffff) },       // 泡沫色
+      uDeepColor: { value: new THREE.Color(0x0a2a5c) },      // 更深邃的深海蓝
+      uShallowColor: { value: new THREE.Color(0x00b8d4) },   // 清脆透亮的青蓝色（类似加勒比海）
+      uFresnelColor: { value: new THREE.Color(0xaae3ff) },    // 更梦幻的菲涅尔反射色
+      uFoamColor: { value: new THREE.Color(0xffffff) },       // 纯白明亮的浪花
       uSunDirection: { value: new THREE.Vector3(0.5, 0.7, 0.5).normalize() },
-      uSunColor: { value: new THREE.Color(0xffeecc) },
-      uOpacity: { value: 0.85 },
-      uWaveHeight: { value: 0.35 },
-      uWaveSpeed: { value: 0.8 },
-      uFoamThreshold: { value: 0.45 },
+      uSunColor: { value: new THREE.Color(0xfffbcc) },
+      uOpacity: { value: 0.95 },   // 水体更浓厚
+      uWaveHeight: { value: 0.6 }, // 加大波浪起伏，更有活力
+      uWaveSpeed: { value: 0.9 },
+      uFoamThreshold: { value: 0.35 }, // 浪花更容易产生，面积更大
     },
 
     vertexShader: /* glsl */`
@@ -179,12 +179,12 @@ export function createWaterSurface(options = {}) {
 
         // === 镜面高光（太阳反射） ===
         vec3 halfDir = normalize(uSunDirection + viewDir);
-        float spec = pow(max(dot(normal, halfDir), 0.0), 128.0);
-        vec3 specular = uSunColor * spec * 2.0;
+        float spec = pow(max(dot(normal, halfDir), 0.0), 256.0); // 高光更锐利，呈现卡通写实
+        vec3 specular = uSunColor * spec * 3.0; // 增强阳光直射水面波光
 
         // 次级高光（环境光）
-        float spec2 = pow(max(dot(normal, halfDir), 0.0), 32.0);
-        specular += uSunColor * spec2 * 0.3;
+        float spec2 = pow(max(dot(normal, halfDir), 0.0), 64.0);
+        specular += uSunColor * spec2 * 0.5;
 
         // === 泡沫效果 ===
         // 波浪顶部的白色泡沫
@@ -195,13 +195,15 @@ export function createWaterSurface(options = {}) {
         float totalFoam = clamp(foamMask + edgeFoam, 0.0, 1.0);
 
         // === 最终合成 ===
-        vec3 finalColor = mix(waterColor, uFresnelColor, fresnel * 0.6);
+        // 让菲涅尔效果有卡通“描边/高亮轮廓”的感觉，采用 smoothstep 强化硬朗边缘
+        float hardFresnel = smoothstep(0.4, 0.8, fresnel);
+        vec3 finalColor = mix(waterColor, uFresnelColor, hardFresnel * 0.8);
         finalColor += specular;
-        finalColor = mix(finalColor, uFoamColor, totalFoam * 0.7);
+        finalColor = mix(finalColor, uFoamColor, totalFoam * 0.85); // 泡沫覆盖更实
 
-        // 轻微的 SSS（次表面散射模拟）
-        float sss = pow(max(dot(-viewDir, uSunDirection), 0.0), 4.0) * 0.15;
-        finalColor += vec3(0.0, sss * 0.5, sss);
+        // 强化的 SSS（次表面散射）— 透光绿色调，像碧玉
+        float sss = pow(max(dot(-viewDir, uSunDirection), 0.0), 3.0) * 0.3;
+        finalColor += vec3(0.0, sss * 0.8, sss * 0.5);
 
         gl_FragColor = vec4(finalColor, uOpacity - totalFoam * 0.1);
       }

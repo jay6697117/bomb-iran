@@ -108,6 +108,20 @@ export class Boss {
       this.bossLight.position.y = 8;
       this.mesh.add(this.bossLight);
     }
+    
+    // [新增] 覆写材质表现为烤漆或光面涂装质感
+    this.mesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (!child.material.emissive || child.material.emissiveIntensity < 1) {
+          child.material.metalness = 0.3;
+          child.material.roughness = 0.35;
+          child.material.envMapIntensity = 1.0;
+        }
+        child.material.needsUpdate = true;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
   }
 
   update(game, deltaTime) {

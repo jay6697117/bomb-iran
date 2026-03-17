@@ -37,45 +37,45 @@ export class RadarStation {
   createRadarModel() {
     const group = new THREE.Group();
 
-    // 基座（混凝土底座）
-    const baseGeo = new THREE.CylinderGeometry(0.8, 1, 0.5, 8);
-    const baseMat = createMaterial('metal', 0x636e72);
+    // 基座（更加厚重的六边形混凝土底座）
+    const baseGeo = new THREE.CylinderGeometry(1.2, 1.4, 0.6, 6);
+    const baseMat = createMaterial('stone', 0x555c61);
     const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = 0.25;
+    base.position.y = 0.3;
     base.castShadow = true;
     group.add(base);
 
-    // 支撑柱
-    const pillarGeo = new THREE.CylinderGeometry(0.15, 0.2, 2, 6);
+    // 支撑柱（带科幻感的金属切角）
+    const pillarGeo = new THREE.CylinderGeometry(0.25, 0.4, 1.8, 6);
     const pillarMat = createMaterial('metal', 0x2d3436);
     const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-    pillar.position.y = 1.5;
+    pillar.position.y = 1.4;
     group.add(pillar);
 
-    // 旋转的碟形天线
+    // 旋转的碟形天线（变得更薄，面积更大，中间有凹陷）
     this.dishGroup = new THREE.Group();
-    this.dishGroup.position.y = 2.5;
+    this.dishGroup.position.y = 2.4;
 
-    const dishGeo = new THREE.CylinderGeometry(0, 1.2, 0.3, 8);
-    const dishMat = createMaterial('metal', COLORS.radarDish);
+    const dishGeo = new THREE.SphereGeometry(1.2, 16, 8, 0, Math.PI * 2, 0, Math.PI / 3);
+    const dishMat = createMaterial('paint', 0xdfe6e9); // 亮白色的雷达盘
     const dish = new THREE.Mesh(dishGeo, dishMat);
-    dish.rotation.x = Math.PI / 6;
+    dish.rotation.x = Math.PI / 2 + 0.3; // 微微上仰
     this.dishGroup.add(dish);
 
-    // 天线反射面
-    const reflectorGeo = new THREE.BoxGeometry(0.1, 0.8, 0.05);
-    const reflectorMat = createMaterial('metal', COLORS.radar);
+    // 天线核心接收器（发光球）
+    const reflectorGeo = new THREE.SphereGeometry(0.2, 8, 8);
+    const reflectorMat = createMaterial('emissive', 0x00d2d3);
     const reflector = new THREE.Mesh(reflectorGeo, reflectorMat);
-    reflector.position.y = 0.2;
+    reflector.position.set(0, 0, 0.8);
     this.dishGroup.add(reflector);
 
     group.add(this.dishGroup);
 
-    // 状态指示灯
-    const lightGeo = new THREE.SphereGeometry(0.1, 6, 4);
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    // 状态指示灯（放大发光感）
+    const lightGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 6);
+    const lightMat = createMaterial('emissive', 0x00ff00);
     this.statusLight = new THREE.Mesh(lightGeo, lightMat);
-    this.statusLight.position.y = 2.8;
+    this.statusLight.position.y = 2.7;
     group.add(this.statusLight);
 
     return group;

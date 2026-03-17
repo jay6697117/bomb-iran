@@ -5,84 +5,86 @@
 // ============================
 import * as THREE from 'three';
 
-// 材质预设配置
+// 材质预设配置 - 升级为写实+卡通模型感
 const MATERIAL_PRESETS = {
-  // 金属质感（炮台/机身金属件/炮管）
+  // 金属质感（炮台/机身金属件/炮管） - 更强的反光和高光
   metal: {
     MaterialClass: THREE.MeshStandardMaterial,
-    metalness: 0.7,
-    roughness: 0.3,
-    envMapIntensity: 0.6,
+    metalness: 0.85,
+    roughness: 0.2,
+    envMapIntensity: 1.2,
   },
-  // 油漆涂装（飞机外壳/载具）
+  // 油漆涂装（飞机外壳/载具） - 增加清漆层的质感，像精致的塑料玩具/车漆
   paint: {
     MaterialClass: THREE.MeshPhysicalMaterial,
-    metalness: 0.1,
-    roughness: 0.35,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.15,
-    envMapIntensity: 0.5,
+    metalness: 0.15,
+    roughness: 0.25,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
+    envMapIntensity: 1.0,
   },
-  // 石材/混凝土（建筑/墙壁）
+  // 石材/混凝土（建筑/墙壁） - 不平整感，稍微降低粗糙度体现微弱光泽
   stone: {
     MaterialClass: THREE.MeshStandardMaterial,
-    metalness: 0.0,
-    roughness: 0.85,
-    envMapIntensity: 0.3,
+    metalness: 0.05,
+    roughness: 0.7,
+    envMapIntensity: 0.5,
   },
   // 泥土/沙地（地形表面）
   earth: {
     MaterialClass: THREE.MeshStandardMaterial,
     metalness: 0.0,
-    roughness: 1.0,
-    envMapIntensity: 0.2,
+    roughness: 0.9,
+    envMapIntensity: 0.3,
   },
-  // 玻璃（驾驶舱/窗户）
+  // 玻璃（驾驶舱/窗户） - 更加清透反光
   glass: {
     MaterialClass: THREE.MeshPhysicalMaterial,
-    metalness: 0.1,
-    roughness: 0.1,
-    transmission: 0.7,
-    thickness: 0.5,
-    envMapIntensity: 0.7,
+    metalness: 0.3,
+    roughness: 0.05,
+    transmission: 0.9,
+    thickness: 1.2,
+    envMapIntensity: 1.5,
     transparent: true,
-    opacity: 0.85,
+    opacity: 1.0,
   },
   // 布料/帐篷
   fabric: {
     MaterialClass: THREE.MeshStandardMaterial,
     metalness: 0.0,
     roughness: 0.9,
-    envMapIntensity: 0.15,
+    envMapIntensity: 0.2,
   },
-  // 发光体（指示灯/天线/导弹尾焰）
+  // 发光体（指示灯/天线/导弹尾焰） - 强化发光，霓虹感
   emissive: {
     MaterialClass: THREE.MeshStandardMaterial,
     metalness: 0.0,
-    roughness: 0.5,
-    emissiveIntensity: 0.6,
+    roughness: 0.2,
+    emissiveIntensity: 3.5,
   },
-  // 植被（树叶/仙人掌）
+  // 植被（树叶/仙人掌） - 像塑胶多肉植物一样可爱
   foliage: {
-    MaterialClass: THREE.MeshStandardMaterial,
+    MaterialClass: THREE.MeshPhysicalMaterial, // 换成 Physical 增加次表面透光感
     metalness: 0.0,
-    roughness: 0.8,
-    envMapIntensity: 0.3,
+    roughness: 0.4,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.4,
+    envMapIntensity: 0.6,
     side: THREE.DoubleSide,
   },
   // 木材（树干/路灯杆）
   wood: {
     MaterialClass: THREE.MeshStandardMaterial,
     metalness: 0.0,
-    roughness: 0.75,
-    envMapIntensity: 0.2,
+    roughness: 0.65,
+    envMapIntensity: 0.3,
   },
   // 道路/沥青
   asphalt: {
     MaterialClass: THREE.MeshStandardMaterial,
-    metalness: 0.0,
-    roughness: 0.95,
-    envMapIntensity: 0.1,
+    metalness: 0.1,
+    roughness: 0.8,
+    envMapIntensity: 0.4,
   },
 };
 

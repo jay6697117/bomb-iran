@@ -99,6 +99,26 @@ export class EnemyFighter {
       this._ensureEngineMaterial(this.engine2);
     }
 
+    // [新增] 为普通战机模型也叠加烤漆或金属漆质感
+    group.traverse((child) => {
+      if (child.isMesh && child.material) {
+        // 如果是玻璃或黑色涂装部件，分别处理
+        if (child.material.name && child.material.name.toLowerCase().includes('glass')) {
+           child.material.metalness = 0.5;
+           child.material.roughness = 0.1;
+           child.material.transmission = 0.8;
+           child.material.transparent = true;
+        } else {
+           child.material.metalness = 0.4;
+           child.material.roughness = 0.3;
+           child.material.envMapIntensity = 1.0;
+        }
+        child.material.needsUpdate = true;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     return group;
   }
 

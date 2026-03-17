@@ -32,14 +32,33 @@ export class Building {
     this.height = height;
     this.depth = depth;
 
-    // 主体网格
-    const geo = new THREE.BoxGeometry(width, height, depth);
-    const mat = createMaterial('stone', color);
-    this.mesh = new THREE.Mesh(geo, mat);
-    this.mesh.position.set(x, height / 2, z);
+    // 建筑主楼体（不包括房顶）
+    const mainHeight = height * 0.8;
+    const bodyGeo = new THREE.BoxGeometry(width, mainHeight, depth);
+    const bodyMat = createMaterial('stone', color);
+    this.mesh = new THREE.Mesh(bodyGeo, bodyMat);
+    this.mesh.position.set(x, mainHeight / 2, z);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
     game.sceneManager.scene.add(this.mesh);
+
+    // 建筑屋顶（卡通斜顶/倒角感）
+    const roofGeo = new THREE.ConeGeometry(Math.max(width, depth) * 0.7, height * 0.3, 4);
+    // 旋转让 Cone 切面对齐四边形
+    roofGeo.rotateY(Math.PI / 4); 
+    const roofMat = createMaterial('paint', COLORS.building3 || 0xd63031); // 显眼的屋顶颜色
+    this.roof = new THREE.Mesh(roofGeo, roofMat);
+    this.roof.position.set(x, mainHeight + (height * 0.3) / 2, z);
+    this.roof.castShadow = true;
+    this.roof.receiveShadow = true;
+    game.sceneManager.scene.add(this.roof);
+
+    // 建筑底座基石
+    const baseGeo = new THREE.BoxGeometry(width * 1.05, 0.2, depth * 1.05);
+    const baseMat = createMaterial('stone', 0x2d3436);
+    this.base = new THREE.Mesh(baseGeo, baseMat);
+    this.base.position.set(x, 0.1, z);
+    game.sceneManager.scene.add(this.base);
 
     // 建筑装饰（窗户等）
     this.addDecorations(game, width, height, depth, x, z);
@@ -55,6 +74,7 @@ export class Building {
 
     // 引用用于碰撞检测
     this.mesh.userData.entity = this;
+    this.roof.userData.entity = this;
     this.body.userData = { entity: this };
   }
 
@@ -66,16 +86,14 @@ export class Building {
 
     for (let row = 0; row < windowRows; row++) {
       for (let col = 0; col < windowCols; col++) {
-        const winGeo = new THREE.PlaneGeometry(0.35, 0.35);
-        const winMat = new THREE.MeshBasicMaterial({
-          color: Math.random() > 0.3 ? 0x74b9ff : 0xffeaa7,
-          side: THREE.DoubleSide
-        });
+        // 卡通窗户，增加一点厚度，不要纯贴片
+        const winGeo = new THREE.BoxGeometry(0.35, 0.35, 0.05);
+        const winMat = createMaterial('glass', Math.random() > 0.3 ? 0x74b9ff : 0xffeaa7);
         const win = new THREE.Mesh(winGeo, winMat);
         win.position.set(
           x - w / 2 + 0.5 + col * (w / windowCols),
           0.8 + row * 1.2,
-          z - d / 2 - 0.01
+          z - d / 2 // 立体窗台略微突出
         );
         game.sceneManager.scene.add(win);
         this.decorations.push(win);
@@ -107,8 +125,11 @@ export class Building {
 
     const pos = this.mesh.position.clone();
 
-    // 移除原始建筑
+    // 移除原始建筑部件
     game.sceneManager.scene.remove(this.mesh);
+    if (this.roof) game.sceneManager.scene.remove(this.roof);
+    if (this.base) game.sceneManager.scene.remove(this.base);
+
     game.physicsWorld.removeBody(this.body);
 
     // 移除装饰

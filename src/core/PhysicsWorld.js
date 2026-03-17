@@ -1,5 +1,5 @@
 // ============================
-// 物理世界管理器 - 封装 Cannon-es
+// 物理世界管理器 - 封装 Cannon-es（性能优化：SAPBroadphase + 降低迭代）
 // ============================
 import * as CANNON from 'cannon-es';
 import { PHYSICS } from '../utils/constants.js';
@@ -8,8 +8,9 @@ export class PhysicsWorld {
   constructor() {
     this.world = new CANNON.World();
     this.world.gravity.set(0, PHYSICS.gravity, 0);
-    this.world.broadphase = new CANNON.NaiveBroadphase();
-    this.world.solver.iterations = 10;
+    // SAPBroadphase 比 NaiveBroadphase 快得多（O(n log n) vs O(n²)）
+    this.world.broadphase = new CANNON.SAPBroadphase(this.world);
+    this.world.solver.iterations = 5; // 降低迭代次数，足够满足游戏碎片物理
 
     // 延迟移除队列 - 避免在碰撞回调中直接移除物理体导致崩溃
     this.pendingRemovals = [];

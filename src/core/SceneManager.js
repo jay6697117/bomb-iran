@@ -8,8 +8,8 @@ import { SkySystem } from './SkySystem.js';
 // 阴影质量配置
 const SHADOW_QUALITY = {
   low:    { mapSize: 1024, type: THREE.PCFShadowMap },
-  medium: { mapSize: 2048, type: THREE.PCFSoftShadowMap },
-  high:   { mapSize: 4096, type: THREE.VSMShadowMap },
+  medium: { mapSize: 2048, type: THREE.PCFShadowMap },
+  high:   { mapSize: 4096, type: THREE.PCFShadowMap },
 };
 
 export class SceneManager {
@@ -26,10 +26,10 @@ export class SceneManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.VSMShadowMap; // 高质量软阴影
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 提升阴影质量到软阴影
     this.renderer.setClearColor(0x000000); // 天空系统接管背景色
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.6; // 降低曝光以压制天空 HDR 过曝
+    this.renderer.toneMappingExposure = 0.8; // 微微提升对比度，展现高光
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     // 场景
@@ -76,8 +76,8 @@ export class SceneManager {
     this.sunLight.position.set(sunDir.x * 30, sunDir.y * 30, sunDir.z * 30);
     this.sunLight.castShadow = true;
 
-    // VSM 阴影配置
-    const quality = SHADOW_QUALITY.high;
+    // 阴影配置（性能优化：使用 medium 质量）
+    const quality = SHADOW_QUALITY.medium;
     this.sunLight.shadow.mapSize.width = quality.mapSize;
     this.sunLight.shadow.mapSize.height = quality.mapSize;
     this.sunLight.shadow.camera.near = 0.5;
@@ -87,8 +87,8 @@ export class SceneManager {
     this.sunLight.shadow.camera.top = 50;
     this.sunLight.shadow.camera.bottom = -50;
     this.sunLight.shadow.bias = -0.0005;
-    this.sunLight.shadow.normalBias = 0.02; // VSM 需要 normalBias
-    this.sunLight.shadow.radius = 4; // VSM 软阴影模糊半径
+    this.sunLight.shadow.normalBias = 0.02;
+    this.sunLight.shadow.radius = 3; // PCFSoft 柔化半径
     this.scene.add(this.sunLight);
     this.scene.add(this.sunLight.target);
 

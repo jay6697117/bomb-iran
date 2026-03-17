@@ -9,33 +9,34 @@ import { applyWindShader, updateWindMaterial, updateWind } from '../shaders/Wind
 import { createWaterSurface, updateWater } from '../shaders/WaterSurface.js';
 
 // 地形主题配置
+// 地形主题配置 - 色彩更鲜明、明亮
 const TERRAIN_THEMES = {
   desert: {
-    groundColor: COLORS.desert,
-    skyColor: 0xE8D5B7,
-    fogColor: 0xE8D5B7,
-    edgeColor: 0xC4A882,   // 沙漠边缘：暖沙色，与沙漠地面自然过渡
+    groundColor: 0xEDC9AF, // 更明媚的暖沙色
+    skyColor: 0xFDECB5,
+    fogColor: 0xFDECB5,
+    edgeColor: 0xDBB894,   
     decorations: ['cactus', 'rock', 'dune', 'bush']
   },
   city: {
-    groundColor: COLORS.city,
-    skyColor: 0x87CEEB,
-    fogColor: 0x87CEEB,
-    edgeColor: 0x5B8BA0,   // 城市边缘：天蓝灰色
+    groundColor: 0x8DAAA1, // 轻度灰绿色基调，避免死灰
+    skyColor: 0x8FD6FF,
+    fogColor: 0x8FD6FF,
+    edgeColor: 0x76948D,   
     decorations: ['road', 'tree', 'lamppost', 'bush']
   },
   coast: {
-    groundColor: COLORS.coast,
-    skyColor: 0x87CEEB,
-    fogColor: 0xB0E0E6,
-    edgeColor: 0x2980B9,   // 海岸边缘：海蓝色，模拟海洋
+    groundColor: 0xF5DEB3, // 更加金黄的米阳光沙滩
+    skyColor: 0xA5EFFF,
+    fogColor: 0xC5F4FF,
+    edgeColor: 0x00A8CC,   // 海岸边缘：明亮的深青蓝色
     decorations: ['palm', 'rock', 'water', 'grass']
   },
   mountain: {
-    groundColor: COLORS.mountain,
-    skyColor: 0x9BB5D0,
-    fogColor: 0xC0C8D0,
-    edgeColor: 0x6B8BA4,   // 山地边缘：蓝灰色，模拟远山雾气
+    groundColor: 0x6E857E, // 青翠的山林底色
+    skyColor: 0xAFD6F5,
+    fogColor: 0xCDE4F5,
+    edgeColor: 0x516B64,   
     decorations: ['pine', 'rock', 'snow', 'grass']
   }
 };
@@ -81,15 +82,21 @@ export class Terrain {
     game.sceneManager.scene.add(edgePlane);
     this.meshes.push(edgePlane);
 
-    // 地形起伏（顶点偏移）
-    if (theme === 'mountain' || theme === 'desert') {
+    // 地形起伏（顶点偏移）- 让起伏更加圆润，有厚度的粘土感
+    if (theme === 'mountain' || theme === 'desert' || theme === 'coast') {
       const pos = groundGeo.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const y = pos.getY(i);
-        // 多层噪音模拟
-        const noise = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 0.5
-          + Math.sin(x * 0.3 + 2.1) * Math.cos(y * 0.25) * 0.25;
+        // 多层低频噪音，创造平滑沙丘/山丘
+        let noise = Math.sin(x * 0.08) * Math.cos(y * 0.08) * 1.2
+          + Math.sin(x * 0.2 + 1.1) * Math.cos(y * 0.15) * 0.6;
+        
+        // 增加“阶地”卡通感（Terraced effect）
+        if (theme === 'mountain' || theme === 'desert') {
+          noise = Math.round(noise * 1.5) / 1.5; // 故意制造阶梯感
+        }
+
         pos.setZ(i, noise);
       }
       pos.needsUpdate = true;

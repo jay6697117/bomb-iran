@@ -41,11 +41,11 @@ export class SAMSite {
   createSAMModel() {
     const group = new THREE.Group();
 
-    // 加固基座
-    const baseGeo = new THREE.BoxGeometry(2, 0.5, 2);
-    const baseMat = createMaterial('metal', 0x636e72);
+    // 加固基座（更有层次感的多边形底座）
+    const baseGeo = new THREE.CylinderGeometry(1.5, 1.8, 0.6, 8);
+    const baseMat = createMaterial('stone', 0x4a5559);
     const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = 0.25;
+    base.position.y = 0.3;
     base.castShadow = true;
     group.add(base);
 
@@ -53,10 +53,10 @@ export class SAMSite {
     this.launcherGroup = new THREE.Group();
     this.launcherGroup.position.y = 0.5;
 
-    // 发射管（4管）
+    // 发射管（4管，变粗增加威慑力）
     for (let i = 0; i < 4; i++) {
-      const tubeGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.2, 6);
-      const tubeMat = createMaterial('metal', COLORS.sam);
+      const tubeGeo = new THREE.CylinderGeometry(0.18, 0.2, 1.4, 8);
+      const tubeMat = createMaterial('paint', COLORS.sam || 0x27ae60); // 用上车漆质感
       const tube = new THREE.Mesh(tubeGeo, tubeMat);
       const row = Math.floor(i / 2);
       const col = i % 2;

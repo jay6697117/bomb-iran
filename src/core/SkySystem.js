@@ -210,8 +210,8 @@ export class SkySystem {
       depthWrite: false,
     });
 
-    // 用 3-5 个球体组合出云的形状
-    const blobCount = 3 + Math.floor(Math.random() * 3);
+    // 用 2-3 个球体组合出云的形状（性能优化：减少球体数）
+    const blobCount = 2 + Math.floor(Math.random() * 2);
     for (let i = 0; i < blobCount; i++) {
       const radius = 2 + Math.random() * 3;
       const geo = new THREE.SphereGeometry(radius, 8, 6);

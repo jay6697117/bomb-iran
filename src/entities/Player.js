@@ -147,6 +147,31 @@ export class Player {
       group.add(this.thruster);
     }
 
+    // [新增] 覆写模型的材质以呈现高亮的卡通+写实车漆感
+    group.traverse((child) => {
+      if (child.isMesh && child.material) {
+        // 让飞机表面像上了清漆一样光滑反光
+        if (child.material.name && child.material.name.toLowerCase().includes('glass')) {
+           // 特殊处理玻璃
+           child.material.metalness = 0.5;
+           child.material.roughness = 0.05;
+           child.material.transmission = 0.9;
+           child.material.transparent = true;
+        } else {
+           // 物理模型转换，增加油漆镀层质感
+           child.material.metalness = 0.3;
+           child.material.roughness = 0.3;
+           
+           // 如果材质支持清漆（MeshPhysicalMaterial 等），开启它；
+           // 若为 Standard，我们为了不破坏它自带的纹理不强制替换，只调高环境流明
+           child.material.envMapIntensity = 1.2;
+        }
+        child.material.needsUpdate = true;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     return group;
   }
 
